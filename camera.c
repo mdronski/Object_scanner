@@ -2,10 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
-#include <getopt.h>             /* getopt_long() */
-
-#include <fcntl.h>              /* low-level i/o */
+#include <getopt.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/stat.h>
