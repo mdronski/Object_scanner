@@ -14,6 +14,10 @@
 
 #include <linux/videodev2.h>
 #include <libv4l2.h>
+#include <bits/types/siginfo_t.h>
+#include <libnet.h>
+
+#define STREAM_NAME "image_stream"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define MAX(X, Y)  ((X) > (Y) ? (X) : (Y))
@@ -31,10 +35,12 @@ struct buffer *buffers;
 static unsigned int n_buffers;
 static int out_buf = 1;
 static int force_format = 1;
-static int frame_count = 50;
+static int frame_count = 1000;
 int frame_counter = 0;
 __u32 witdh = 640;
-__u32 height = 480;
+__u32 height = 640;
+
+FILE *image_stream;
 
 void v4lconvert_yuyv_to_rgb24(const unsigned char *src, unsigned char *dest,
                               int width, int height) {
@@ -61,7 +67,6 @@ void v4lconvert_yuyv_to_rgb24(const unsigned char *src, unsigned char *dest,
     }
 }
 
-
 static void errno_exit(const char *s) {
     fprintf(stderr, "%s error %d, %s\\n", s, errno, strerror(errno));
     exit(EXIT_FAILURE);
@@ -78,8 +83,7 @@ static int xioctl(int fh, int request, void *arg) {
 }
 
 static void process_image(const void *p, int size) {
-    if (out_buf && frame_counter == frame_count - 1) {
-//        printf("%d\n", size);
+    if (out_buf && frame_counter > 50 && frame_counter % 2 == 0) {
         FILE *out_file = fopen("out.ppm", "w");
         fprintf(out_file, "P6\n%d %d\n255\n", witdh, height);
 
@@ -88,15 +92,13 @@ static void process_image(const void *p, int size) {
 
         v4lconvert_yuyv_to_rgb24(p, rgb_image, witdh, height);
 
-        for (int i = 0; i < witdh * height * 3; i++) {
-            fprintf(out_file, "%c", rgb_ptr[i]);
-        }
-
-        fwrite(rgb_ptr, 1, witdh * height * 3, out_file);
-
-//        for (int i = 0; i < 512; i++) {
-//            fprintf(stdout, "%d  ", rgb_ptr[i]);
+//        for (int i = 0; i < witdh * height * 3; i++) {
+//            fprintf(out_file, "%c", rgb_ptr[i]);
 //        }
+//        fwrite(rgb_ptr, 1, witdh * height * 3, out_file);
+
+        fwrite(rgb_ptr, 1, witdh * height * 3, image_stream);
+
         free(rgb_image);
         fclose(out_file);
     }
@@ -142,6 +144,7 @@ static void mainloop(void) {
     count = frame_count;
 
     while (count-- > 0) {
+//    while (1) {
         while (1) {
             fd_set fds;
             struct timeval tv;
@@ -287,7 +290,6 @@ static void init_mmap(void) {
     }
 }
 
-
 static void init_device(void) {
     struct v4l2_capability cap;
     struct v4l2_cropcap cropcap;
@@ -399,7 +401,6 @@ static void open_device(void) {
     }
 }
 
-
 static void usage(FILE *fp, int argc, char **argv) {
     fprintf(fp,
             "Usage: \n"
@@ -412,6 +413,27 @@ static void usage(FILE *fp, int argc, char **argv) {
 
 static const char short_options[] = "d:hmruofc:";
 
+static void close_stream(int sigNum, siginfo_t* info, void* vp){
+    fclose(image_stream);
+    remove(STREAM_NAME);
+    exit(EXIT_SUCCESS);
+}
+
+static void initialise_stream() {
+    struct sigaction sigAction;
+    sigfillset(&sigAction.sa_mask);
+    sigAction.sa_flags = SA_SIGINFO;
+    sigAction.sa_sigaction = &close_stream;
+    sigaction(SIGINT, &sigAction, NULL);
+
+    if (mkfifo(STREAM_NAME, 0777) == -1) {
+        perror("error");
+    }
+
+    image_stream = fopen(STREAM_NAME, "w");
+
+}
+
 static const struct option
         long_options[] = {
         {"device", required_argument, NULL, 'd'},
@@ -419,6 +441,7 @@ static const struct option
         {"count",  required_argument, NULL, 'c'},
         {0, 0, 0,                           0}
 };
+
 
 int main(int argc, char **argv) {
     dev_name = "/dev/video0";
@@ -458,13 +481,20 @@ int main(int argc, char **argv) {
         }
     }
 
+
+
+
+    atexit(close_stream);
+
     open_device();
     init_device();
+    initialise_stream();
     start_capturing();
     mainloop();
     stop_capturing();
     uninit_device();
     close_device();
+    close_stream(NULL, NULL, NULL);
     fprintf(stderr, "\n");
     return 0;
 }
