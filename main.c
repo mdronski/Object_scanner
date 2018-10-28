@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <libnet.h>
+#include <pthread.h>
 
 #include "cnn_utils.h"
 
@@ -9,6 +10,35 @@
 FILE *gui_stream;
 #define PYTHON_GUI "python_gui"
 
+int width = 640;
+int height = 480;
+double max = -999.0;
+
+typedef struct compute_norm_struct{
+    conv_layer *L1;
+    conv_layer *L2;
+    int h;
+}compute_norm_struct;
+
+void *compute_norm(void *args){
+    compute_norm_struct *S = (compute_norm_struct *)args;
+    conv_layer *L1 = S->L1;
+    conv_layer *L2 = S->L2;
+    int h = S->h;
+
+    for (int w = 0; w < width; ++w) {
+        L2->values[0][h][w] = sqrt(
+                L1->values[0][h][w] * L1->values[0][h][w]
+                + L1->values[1][h][w] * L1->values[1][h][w]
+        );
+
+        L2->values[0][h][w] = L2->values[0][h][w] < 150 ? L2->values[0][h][w] :
+                L2->values[0][h][w] + 50 > 255 ? 255 : L2->values[0][h][w] + 50;
+
+        if (max < L2->values[0][h][w])
+            max = L2->values[0][h][w];
+    }
+}
 
 kernel *initialise_kernel(){
 
@@ -68,68 +98,72 @@ static void initialise_stream() {
 }
 
 void process_image(__uint8_t *image_ptr){
+    int tmp = 0;
 
-    conv_layer *L = allocate_conv_layer(640, 3);
+    conv_layer *L = allocate_conv_layer(height, width, 3);
     kernel *K = initialise_kernel();
 
 
-//    char *buffer = malloc(100 * sizeof(char));
-//    size_t size = 100;
-//    getline(&buffer, &size, image_ptr);
-//    getline(&buffer, &size, image_ptr);
-//    getline(&buffer, &size, image_ptr);
-//    fprintf(stderr, "%d ", tmp++);
-
-    for (int h = 0; h < 640; ++h) {
-        for (int w = 0; w < 640; ++w) {
+    for (int h = 0; h < height; ++h) {
+        for (int w = 0; w < width; ++w) {
             for (int l = 0; l < 3; ++l) {
-                L->values[l][h][w] = (double) image_ptr[h*640*3 + 3*w + l];
+                L->values[l][h][w] = (double) image_ptr[h*width*3 + 3*w + l];
             }
         }
     }
 
+    conv_layer *L2 = conv3D_paralel(L, K, 1, NO_PADDING);
+
+    height = height - 2;
+    width = width - 2;
 
 
-//    print_kernel(K);
-//    fprintf(stderr, "%d %d\n", kernel1->n_layers, kernel1->n_filters);
-//    fprintf(stderr, "%d %d\n", L->n_layers, L->size);
+    conv_layer *L3 = allocate_conv_layer(height, width, 1);
 
-    conv_layer *conv_layer2 = conv3D_paralel(L, K, 1, NO_PADDING);
 
-//    print_conv_layer(conv_layer2);
+    pthread_t *threads = malloc(height * sizeof(pthread_t));
+    compute_norm_struct *structs = malloc(height * sizeof(compute_norm_struct));
 
-    conv_layer *conv_layer3 = allocate_conv_layer(638, 1);
+    for (int h = 0; h < height; ++h) {
+        structs[h].L1 = L2;
+        structs[h].L2 = L3;
+        structs[h].h = h;
 
-//    fprintf(stderr, "%d %d\n", conv_layer2->n_layers, conv_layer2->size);
-//    free(kernel1);
-//    free(L);
+        pthread_create(&(threads[h]), NULL, compute_norm, &structs[h]);
 
-//    fprintf(stderr, "%d %d\n", conv_layer2->n_layers, conv_layer3->n_layers);
+    }
 
-    double max = -999.0;
-    for (int h = 0; h < 638; ++h) {
-        for (int w = 0; w < 638; ++w) {
-//            fprintf(stderr, "%d %d\n", h, w);
-//            fprintf(stderr, "%lf %lf\n", conv_layer2->values[0][h][w], conv_layer2->values[1][h][w]);
-            conv_layer3->values[0][h][w] = sqrt(
-                    conv_layer2->values[0][h][w] * conv_layer2->values[0][h][w]
-                    + conv_layer2->values[1][h][w] * conv_layer2->values[1][h][w]
-            );
-
-            if (max < conv_layer3->values[0][h][w])
-                max = conv_layer3->values[0][h][w];
+    for (int h = 0; h < height; ++h) {
+        if(pthread_join(threads[h], NULL)){
+            perror("JOIN ERROR");
         }
     }
 
 
 
-//    print_conv_layer(conv_layer3);
+//
+//    double max = -999.0;
+//    for (int h = 0; h < height; ++h) {
+//        for (int w = 0; w < width; ++w) {
+//            L3->values[0][h][w] = sqrt(
+//                    L2->values[0][h][w] * L2->values[0][h][w]
+//                    + L2->values[1][h][w] * L2->values[1][h][w]
+//            );
+//
+//            L3->values[0][h][w] = L3->values[0][h][w] > 150 ? 255 : 0;
+//
+//            if (max < L3->values[0][h][w])
+//                max = L3->values[0][h][w];
+//        }
+//    }
+//
 
-    size_t img_size = 3 * 638 * 638;
-    unsigned char *image_buffer = malloc(img_size + 15 +638);
 
-//    FILE *out_file = fopen("filtered.ppm", "w");
-//    fprintf(out_file, "P6\n%d %d\n255\n", 638, 638);
+
+    int img_size = (3 * height * width);
+    unsigned char *image_buffer = malloc(img_size + 15);
+
+
     image_buffer[0] = 'P';
     image_buffer[1] = '6';
     image_buffer[2] = '\n';
@@ -146,53 +180,51 @@ void process_image(__uint8_t *image_ptr){
     image_buffer[13] = '5';
     image_buffer[14] = '\n';
     int i = 15;
-    for (int h = 0; h < 638; ++h) {
-        for (int w = 0; w < 638; ++w) {
-            unsigned char c = (unsigned char) ((conv_layer3->values[0][h][w] / max) * 255.0);
-//            printf("%d %d %d\n", h, w, c);
-//            fwrite(&c, 1, sizeof(char), out_file);
+    for (int h = 0; h < height; ++h) {
+        for (int w = 0; w < width; ++w) {
+            unsigned char c = (unsigned char) ((L3->values[0][h][w] / max) * 255.0);
+
             image_buffer[i++] = c;
             image_buffer[i++] = c;
             image_buffer[i++] = c;
-//            fwrite(&c, 1, sizeof(char), out_file);
-//            fwrite(&c, 1, sizeof(char), out_file);
+
         }
         image_buffer[i++] = 0;
         image_buffer[i++] = 0;
 
     }
-//    fclose(out_file);
-//    for (int i = 0; i < 64; ++i) {
-//        fprintf(stderr, "%d ", image_buffer[i]);
+
+//
+//    FILE *out_file = fopen("filtered.ppm", "w");
+//    fprintf(out_file, "P6\n%d %d\n255\n", height, width);
+//    for (int h = 0; h < height; ++h) {
+//        for (int w = 0; w < width; ++w) {
+//            unsigned char c = (unsigned char) ((L3->values[0][h][w] / max) * 255.0);
+////            printf("%d %d %d\n", h, w, c);
+//            fwrite(&c, 1, sizeof(char), out_file);
+//            fwrite(&c, 1, sizeof(char), out_file);
+//            fwrite(&c, 1, sizeof(char), out_file);
+//        }
 //    }
-//    printf("\n\n");
+//
+//    fclose(out_file);
 
 
-    FILE *out_file = fopen("filtered.ppm", "w");
-    fprintf(out_file, "P6\n%d %d\n255\n", 638, 638);
-    for (int h = 0; h < 638; ++h) {
-        for (int w = 0; w < 638; ++w) {
-            unsigned char c = (unsigned char) ((conv_layer3->values[0][h][w] / max) * 255.0);
-//            printf("%d %d %d\n", h, w, c);
-            fwrite(&c, 1, sizeof(char), out_file);
-            fwrite(&c, 1, sizeof(char), out_file);
-            fwrite(&c, 1, sizeof(char), out_file);
-        }
-    }
-
-    fclose(out_file);
-
-
-    fwrite(image_buffer, 1, img_size, gui_stream);
+    fwrite(image_buffer, 1, (size_t) img_size, gui_stream);
     fflush(gui_stream);
+
     fclose(gui_stream);
+
     gui_stream = fopen(PYTHON_GUI, "wb");
 
 
     free_conv_layer(L);
-    free_conv_layer(conv_layer2);
-    free_conv_layer(conv_layer3);
+    free_conv_layer(L2);
+    free_conv_layer(L3);
     free_kernel(K);
+
+    height = height + 2;
+    width = width + 2;
 
 
 }
@@ -230,20 +262,27 @@ int main() {
 
 
     atexit(close_stream);
+    clock_t start, end;
+    double cpu_time_used;
+
 
     FILE *image_stream = fopen(STREAM_NAME, "r");
-    size_t img_size = 3*640*640;
+    int img_size = 3*height*width;
     __uint8_t *image_ptr = malloc(img_size * sizeof(__uint8_t));
     initialise_stream();
 
     while (image_stream){
-        fread(image_ptr, img_size, 1, image_stream);
+        start = clock();
+
+        fread(image_ptr, (size_t) img_size, 1, image_stream);
 //        for (int i = 0; i < 64; ++i) {
 //            fprintf(stderr, "%d ", image_ptr[i]);
 //        }
-        fprintf(stderr, "\n\nNEXT image\n\n");
 
         process_image(image_ptr);
+        end = clock();
+        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+        fprintf(stderr, "\nProcessing time = %lf\n", cpu_time_used);
 
     }
 

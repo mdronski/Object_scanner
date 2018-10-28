@@ -51,10 +51,10 @@ void print_kernel(kernel *K) {
 void print_conv_layer( conv_layer *L) {
     int n_layers = L->n_layers;
 
-    printf("Size = %d\n", L->size);
+    printf("Size = %d x %d\n", L->height, L->width);
     for (int l = 0; l < n_layers; ++l) {
-        for (int h = 0; h < L->size; ++h) {
-            for (int w = 0; w < L->size; ++w) {
+        for (int h = 0; h < L->height; ++h) {
+            for (int w = 0; w < L->width; ++w) {
                 printf("%.3lf ", L->values[l][h][w]);
             }
             printf("\n");
@@ -75,18 +75,19 @@ void print3D(double ***X, int depth, int height, int width) {
     }
 }
 
-conv_layer *allocate_conv_layer(int size, int n_layers) {
+conv_layer *allocate_conv_layer(int height, int width, int n_layers) {
 
     conv_layer *L = malloc(sizeof(conv_layer));
-    L->size=size;
+    L->height=height;
+    L->width=width;
     L->n_layers = n_layers;
 
     double ***array = (double ***) malloc(n_layers * sizeof(double **));
 
     for (int l = 0; l < n_layers; ++l) {
-        array[l] = (double **) malloc(size * sizeof(double *));
-        for (int h = 0; h < size; ++h) {
-            array[l][h] = (double *) malloc(size * sizeof(double));
+        array[l] = (double **) malloc(height * sizeof(double *));
+        for (int h = 0; h < height; ++h) {
+            array[l][h] = (double *) malloc(width * sizeof(double));
         }
     }
     L->values = array;
@@ -119,16 +120,12 @@ kernel *allocate_kernel(int size, int n_layers, int n_filters) {
 void free_conv_layer(conv_layer *L){
 
     for (int l = 0; l < L->n_layers; ++l) {
-        for (int h = 0; h < L->size; ++h) {
-//            printf("%d %d\n", l, h);
+        for (int h = 0; h < L->height; ++h) {
             free(L->values[l][h]);
         }
-//        printf("xd\n");
         free(L->values[l]);
     }
-//    printf("xd\n");
     free(L);
-//    printf("xd\n");
 }
 
 void free_kernel(kernel *K){
@@ -179,27 +176,27 @@ void pad_0(conv_layer *L, int pad_range){
 
 //        Top side
         for (int h = 0; h < pad_range; ++h) {
-            for (int w = 0; w < L->size; ++w) {
+            for (int w = 0; w < L->width; ++w) {
                 L->values[l][h][w] = 0;
             }
         }
 
 //        Right side
-        for (int h = 0; h < L->size; ++h) {
-            for (int w = L->size-pad_range; w < L->size; ++w) {
+        for (int h = 0; h < L->height; ++h) {
+            for (int w = L->width-pad_range; w < L->width; ++w) {
                 L->values[l][h][w] = 0;
             }
         }
 
 //        Bottom side
-        for (int h = L->size-pad_range; h < L->size; ++h) {
-            for (int w = 0; w < L->size; ++w) {
+        for (int h = L->height-pad_range; h < L->height; ++h) {
+            for (int w = 0; w < L->width; ++w) {
                 L->values[l][h][w] = 0;
             }
         }
 
 //        Left side
-        for (int h = 0; h < L->size; ++h) {
+        for (int h = 0; h < L->height; ++h) {
             for (int w = 0; w < pad_range; ++w) {
                 L->values[l][h][w] = 0;
             }
@@ -218,7 +215,7 @@ conv_layer *conv3D( conv_layer *L,  kernel *K, int stride, enum PADDING pad) {
 
     switch (pad){
         case NO_PADDING:
-            NL = allocate_conv_layer((((L->size - K->size)/stride) + 1), K->n_filters);
+            NL = allocate_conv_layer((((L->height - K->size)/stride) + 1), (((L->width - K->size)/stride) + 1), K->n_filters);
             break;
         case ZERO_PADDING:
             perror("ZERO_PADDING IS UNDER DEPLOYMENT");
@@ -226,9 +223,9 @@ conv_layer *conv3D( conv_layer *L,  kernel *K, int stride, enum PADDING pad) {
 
     for (int f = 0; f < NL->n_layers; ++f) {
 
-        for (int h = 0; h < NL->size; ++h) {
+        for (int h = 0; h < NL->height; ++h) {
 
-            for (int w = 0; w < NL->size; ++w) {
+            for (int w = 0; w < NL->width; ++w) {
 
                 NL->values[f][h][w] = conv_step(L->values, K->weights[f], K->n_layers, K->size, h*stride, w*stride);
 
@@ -242,7 +239,7 @@ conv_layer *conv3D( conv_layer *L,  kernel *K, int stride, enum PADDING pad) {
 void *row_convolution(void *args){
     conv_row_struct *S = (conv_row_struct *) args;
 
-    for (int w = 0; w < S->NL->size; ++w) {
+    for (int w = 0; w < S->NL->width; ++w) {
 
         S->NL->values[S->f][S->h][w] = conv_step(S->L->values, S->K->weights[S->f], S->K->n_layers, S->K->size, S->h*S->stride, w*S->stride);
 
@@ -260,18 +257,18 @@ conv_layer *conv3D_paralel(conv_layer *L,  kernel *K, int stride, enum PADDING p
 
     switch (pad){
         case NO_PADDING:
-            NL = allocate_conv_layer((((L->size - K->size)/stride) + 1), K->n_filters);
+            NL = allocate_conv_layer((((L->height - K->size)/stride) + 1), (((L->width - K->size)/stride) + 1), K->n_filters);
             break;
         case ZERO_PADDING:
             perror("ZERO_PADDING IS UNDER DEPLOYMENT");
     }
 
-    pthread_t *threads = malloc(NL->size * sizeof(pthread_t));
-    conv_row_struct *rows_structs = malloc(NL->size * sizeof(conv_row_struct));
+    pthread_t *threads = malloc(NL->height * sizeof(pthread_t));
+    conv_row_struct *rows_structs = malloc(NL->height * sizeof(conv_row_struct));
 
     for (int f = 0; f < NL->n_layers; ++f) {
 
-        for (int h = 0; h < NL->size; ++h) {
+        for (int h = 0; h < NL->height; ++h) {
             rows_structs[h].f=f;
             rows_structs[h].h=h;
             rows_structs[h].K=K;
@@ -283,7 +280,7 @@ conv_layer *conv3D_paralel(conv_layer *L,  kernel *K, int stride, enum PADDING p
 
         }
 
-        for (int h = 0; h < NL->size; ++h) {
+        for (int h = 0; h < NL->height; ++h) {
             if(pthread_join(threads[h], NULL)){
                 perror("JOIN ERROR");
             }
@@ -296,13 +293,13 @@ conv_layer *conv3D_paralel(conv_layer *L,  kernel *K, int stride, enum PADDING p
     return NL;
 }
 
-conv_layer *test_conv_layer(int size, int n_layers) {
+conv_layer *test_conv_layer(int height, int width, int n_layers) {
 
-    conv_layer *test_layer = allocate_conv_layer(size, n_layers);
+    conv_layer *test_layer = allocate_conv_layer(height, width, n_layers);
 
     for (int l = 0; l < n_layers; ++l) {
-        for (int h = 0; h < size; ++h) {
-            for (int w = 0; w < size; ++w) {
+        for (int h = 0; h < height; ++h) {
+            for (int w = 0; w < width; ++w) {
                 test_layer->values[l][h][w] = 1.0;
             }
         }
@@ -327,12 +324,12 @@ kernel *test_kernel(int size, int n_layers, int n_filters) {
 }
 
 conv_layer *max_pool(conv_layer * L, int pool_size){
-    conv_layer *L2 = allocate_conv_layer(L->size/pool_size, L->n_layers);
+    conv_layer *L2 = allocate_conv_layer(L->height/pool_size, L->width/pool_size, L->n_layers);
     print_conv_layer(L);
 
     for (int l = 0; l < L2->n_layers; ++l) {
-        for (int h = 0; h < L2->size; ++h) {
-            for (int w = 0; w < L2->size; ++w) {
+        for (int h = 0; h < L2->height; ++h) {
+            for (int w = 0; w < L2->width; ++w) {
                 L2->values[l][h][w] = max_from_2D(L->values[l], 2*h, 2*w, pool_size);
             }
         }
@@ -342,15 +339,15 @@ conv_layer *max_pool(conv_layer * L, int pool_size){
 }
 
 conv_layer *add_layers(conv_layer *L1, conv_layer *L2){
-    if (L1->n_layers != L2->n_layers || L1->size != L2->size){
+    if (L1->n_layers != L2->n_layers || L1->height != L2->height || L1->width != L2->width){
         printf("Wrong parameters for add_layers function!\n");
         exit(EXIT_FAILURE);
     }
-    conv_layer * L3 = allocate_conv_layer(L1->size, L1->n_layers);
+    conv_layer * L3 = allocate_conv_layer(L1->height, L1->width, L1->n_layers);
 
     for (int l = 0; l < L3->n_layers; ++l) {
-        for (int h = 0; h < L3->size; ++h) {
-            for (int w = 0; w < L3->size; ++w) {
+        for (int h = 0; h < L3->height; ++h) {
+            for (int w = 0; w < L3->width; ++w) {
                 L3->values[l][h][w] = L1->values[l][h][w] + L2->values[l][h][w];
             }
         }
@@ -359,11 +356,11 @@ conv_layer *add_layers(conv_layer *L1, conv_layer *L2){
 }
 
 conv_layer *leaky_ReLu(conv_layer *L){
-    conv_layer * L2 = allocate_conv_layer(L->size, L->n_layers);
+    conv_layer * L2 = allocate_conv_layer(L->height, L->width, L->n_layers);
 
     for (int l = 0; l < L->n_layers; ++l) {
-        for (int h = 0; h < L->size; ++h) {
-            for (int w = 0; w < L->size; ++w) {
+        for (int h = 0; h < L->height; ++h) {
+            for (int w = 0; w < L->width; ++w) {
                 L2->values[l][h][w] = MAX(L->values[l][h][w], 0.01);
             }
         }

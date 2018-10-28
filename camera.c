@@ -11,6 +11,9 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#include <math.h>
+#include <pthread.h>
+
 
 #include <linux/videodev2.h>
 #include <libv4l2.h>
@@ -38,12 +41,13 @@ static int force_format = 1;
 static int frame_count = 1000;
 int frame_counter = 0;
 __u32 witdh = 640;
-__u32 height = 640;
+__u32 height = 480;
 
 FILE *image_stream;
 
 void v4lconvert_yuyv_to_rgb24(const unsigned char *src, unsigned char *dest,
                               int width, int height) {
+
     int j;
 
     while (--height >= 0) {
@@ -65,6 +69,7 @@ void v4lconvert_yuyv_to_rgb24(const unsigned char *src, unsigned char *dest,
             src += 4;
         }
     }
+
 }
 
 static void errno_exit(const char *s) {
@@ -92,6 +97,11 @@ static void process_image(const void *p, int size) {
 
         v4lconvert_yuyv_to_rgb24(p, rgb_image, witdh, height);
 
+
+//        for (int i = 0; i < 64; ++i) {
+//            fprintf(stderr, "%d ", rgb_ptr[i]);
+//        }
+
 //        for (int i = 0; i < witdh * height * 3; i++) {
 //            fprintf(out_file, "%c", rgb_ptr[i]);
 //        }
@@ -101,6 +111,7 @@ static void process_image(const void *p, int size) {
 
         free(rgb_image);
         fclose(out_file);
+//        usleep(20);
     }
 
     fflush(stderr);

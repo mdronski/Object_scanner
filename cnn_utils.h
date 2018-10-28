@@ -17,7 +17,8 @@ enum ACTIVATION {
 };
 
 typedef struct conv_layer {
-    int size;
+    int height;
+    int width;
     int n_layers;
 
     double ***values;
@@ -46,7 +47,7 @@ void print_conv_layer( conv_layer *L);
 void print3D(double ***X, int depth, int height, int width);
 
 
-conv_layer *allocate_conv_layer(int size, int n_layers);
+conv_layer *allocate_conv_layer(int height, int width, int n_layers);
 
 kernel *allocate_kernel(int size, int n_layers, int n_filters);
 
@@ -61,7 +62,7 @@ double max_from_2D(double **A, int height, int width, int range);
 double conv_step(double ***L, double ***K, int layers, int filter_size, int h_start, int w_start);
 
 
-conv_layer *test_conv_layer(int size, int n_layers);
+conv_layer *test_conv_layer(int height, int width, int n_layers);
 
 kernel *test_kernel(int size, int n_layers, int n_filters);
 

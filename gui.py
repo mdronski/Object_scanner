@@ -19,7 +19,7 @@ class App(QWidget):
         self.left = 10
         self.top = 10
         self.width = 638
-        self.height = 638
+        self.height = 478
         self.image_stream = open("python_gui", mode='rb')
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
@@ -38,10 +38,9 @@ class App(QWidget):
 
     def refresh(self):
         data = self.image_stream.read()
-        qim = QImage(data, 638, 636, QImage.Format_RGB888)
+        qim = QImage(data, self.width, self.height, QImage.Format_RGB888)
         print(qim.height(), qim.width())
         self.label.setPixmap(QPixmap.fromImage(qim))
-        # self.label.setPixmap(QPixmap('filtered.ppm'))
         self.label.repaint()
 
 
@@ -64,7 +63,7 @@ class App(QWidget):
     #         print(type(data))
     #         A = np.asarray(list(data))
     #         print(A)
-    #         qim = QImage(data, 638, 638, QImage.Format_RGB888)
+    #         qim = QImage(data, 638, 478, QImage.Format_RGB888)
     #         print(qim.height(), qim.width())
     #         self.label.setPixmap(QPixmap.fromImage(qim))
     #         self.repaint()
