@@ -1,7 +1,7 @@
 import io
 import sys
 
-from PyQt5.QtCore import QThread, QTimer
+from PyQt5.QtCore import QThread, QTimer, Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel
 from PyQt5.QtGui import QIcon, QPixmap, QImage
 import numpy as np
@@ -22,7 +22,7 @@ class App(QWidget):
         self.height = 478
         self.image_stream = open("python_gui", mode='rb')
         self.setWindowTitle(self.title)
-        self.setGeometry(self.left, self.top, self.width, self.height)
+        # self.setGeometry(self.left, self.top, self.width, self.height)
         self.init_display_window()
         self.initialise_timer()
         # self.image_updater = self.ImageUpdater(label=self.label, parent=self)
@@ -33,13 +33,14 @@ class App(QWidget):
         self.label = QLabel(self)
         pixmap = QPixmap('filtered.ppm')
         self.label.setPixmap(pixmap)
-        self.resize(pixmap.width(), pixmap.height())
+        self.label.setAlignment(Qt.AlignTop)
+        self.resize(self.width, self.height)
         self.show()
 
     def refresh(self):
         data = self.image_stream.read()
         qim = QImage(data, self.width, self.height, QImage.Format_RGB888)
-        print(qim.height(), qim.width())
+        # print(qim.height(), qim.width())
         self.label.setPixmap(QPixmap.fromImage(qim))
         self.label.repaint()
 

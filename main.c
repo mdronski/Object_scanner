@@ -57,8 +57,6 @@ kernel *initialise_kernel(){
         kernel1->weights[0][l][2][1] = 0.0;
         kernel1->weights[0][l][2][2] = -1.0;
 
-
-
         kernel1->weights[1][l][0][0] = 1.0;
         kernel1->weights[1][l][0][1] = 2.0;
         kernel1->weights[1][l][0][2] = 1.0;
@@ -272,7 +270,7 @@ int main() {
     initialise_stream();
 
     while (image_stream){
-        start = clock();
+//        start = clock();
 
         fread(image_ptr, (size_t) img_size, 1, image_stream);
 //        for (int i = 0; i < 64; ++i) {
@@ -280,9 +278,9 @@ int main() {
 //        }
 
         process_image(image_ptr);
-        end = clock();
-        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-        fprintf(stderr, "\nProcessing time = %lf\n", cpu_time_used);
+//        end = clock();
+//        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+//        fprintf(stderr, "\nProcessing time = %lf\n", cpu_time_used);
 
     }
 

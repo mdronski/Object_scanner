@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <pthread.h>
 
 #include "cnn_utils.h"
@@ -354,6 +355,7 @@ conv_layer *add_layers(conv_layer *L1, conv_layer *L2){
     }
     return L3;
 }
+
 
 conv_layer *leaky_ReLu(conv_layer *L){
     conv_layer * L2 = allocate_conv_layer(L->height, L->width, L->n_layers);
