@@ -1,8 +1,11 @@
-//
-// Created by mdronski on 29.10.18.
-//
+#include "model_loader.h"
+#include "hdf5.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "cnn_utils.h"
 
-#ifndef PROJEKT_MODEL_LOADER_H
-#define PROJEKT_MODEL_LOADER_H
+kernel *load_single_kernel(char *data_set, int size, int previous_filters, int current_filters);
 
-#endif //PROJEKT_MODEL_LOADER_H
+void add_bias(kernel *K, char *data_set);
+
+kernel **load_kernels();
