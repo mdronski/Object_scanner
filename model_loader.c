@@ -46,31 +46,32 @@ char *bias_data_sets[2] = {
 kernel *load_single_kernel(char *data_set, int size, int previous_filters, int current_filters) {
 
     double *array = malloc(size*size*previous_filters*current_filters* sizeof(double));
-//    double array[3][3][3][16];
-
 
     hid_t file_id, dataset_id;  /* identifiers */
     herr_t status;
     kernel *K = allocate_kernel(size, previous_filters, current_filters);
-    printf("xd2\n");
+//    printf("xd2\n");
     /* Open an existing file. */
     file_id = H5Fopen(FILE, H5F_ACC_RDWR, H5P_DEFAULT);
-    printf("xd3\n");
+//    printf("xd3\n");
     /* Open an existing dataset. */
     dataset_id = H5Dopen2(file_id, data_set, H5P_DEFAULT);
-    printf("xd4\n");
+//    printf("xd4\n");
 
     status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
                      array);
 
-    printf("xd4.5\n");
+//    printf("xd4.5\n");
     for (int h = 0; h < size; ++h) {
         for (int w = 0; w < size; ++w) {
             for (int l = 0; l < previous_filters; ++l) {
                 for (int f = 0; f < current_filters; ++f) {
 //                    printf("%d %d %d %d\n",h,w,l,f);
-//                    K->weights[f][l][h][w] = array[h][w][l][f];
-                    K->weights[f][l][h][w] = array[ h*size*previous_filters*current_filters + w*previous_filters*current_filters + l*current_filters + f];
+                    K->weights[f][l][h][w] =
+                            array[ h*size*previous_filters*current_filters
+                            + w*previous_filters*current_filters
+                            + l*current_filters
+                            + f];
                 }
             }
         }
@@ -79,28 +80,22 @@ kernel *load_single_kernel(char *data_set, int size, int previous_filters, int c
     free(array);
 
 
-    printf("xd5\n");
+//    printf("xd5\n");
     /* Close the dataset. */
     status = H5Dclose(dataset_id);
     /* Close the file. */
     status = H5Fclose(file_id);
-
-
-
-
-
 
     return K;
 }
 
 
 
-void add_bias(kernel *K, char *data_set) {
-    double bias[255];
+double* load_bias(char *data_set) {
+    double *bias = malloc(255 * sizeof(double));
 
     hid_t file_id, dataset_id;  /* identifiers */
     herr_t status;
-
 
 
     /* Open an existing file. */
@@ -112,46 +107,57 @@ void add_bias(kernel *K, char *data_set) {
                      bias);
 
 
-    for (int f = 0; f < 255; ++f) {
-        for (int l = 0; l < 256; ++l) {
-            K->weights[f][l][0][0] += bias[f];
-        }
-    }
-
-
     /* Close the dataset. */
     status = H5Dclose(dataset_id);
 
     /* Close the file. */
     status = H5Fclose(file_id);
 
+    return bias;
 }
 
+double **load_biases(){
+    double **biases = malloc(2 * sizeof(double*));
+
+    biases[0] = load_bias(bias_data_sets[0]);
+    biases[1] = load_bias(bias_data_sets[1]);
+
+    return biases;
+}
+
+
 kernel **load_kernels() {
-    kernel **kernels = malloc(13 * sizeof(kernel * ));
+    kernel **kernels = malloc(5 * sizeof(kernel *));
 
-    for (int i = 0; i < 13; ++i) {
-        kernels[i] = load_single_kernel(kernels_data_sets[i], kernel_sizes[0][0], kernel_sizes[0][2],
-                                             kernel_sizes[0][3]);
+    for (int i = 0; i < 5; ++i) {
+        kernels[i] = load_single_kernel(kernels_data_sets[i], kernel_sizes[i][0], kernel_sizes[i][2],
+                                             kernel_sizes[i][3]);
+        fprintf(stderr, "%d\n", i);
     }
-
-    add_bias(kernels[9], bias_data_sets[0]);
-    add_bias(kernels[12], bias_data_sets[1]);
 
     return kernels;
 }
 
-int main() {
-    printf("xd\n");
-    printf("%s\n%d %d %d\n", kernels_data_sets[0], kernel_sizes[0][0], kernel_sizes[0][2], kernel_sizes[0][3]);
-    kernel * K = load_single_kernel(kernels_data_sets[0], kernel_sizes[0][0], kernel_sizes[0][2], kernel_sizes[0][3]);
-    printf("xd\n");
-
-    printf("%d %d %d\n", K->size, K->n_layers, K->n_filters);
-//    for (int i = 0; i < 64; ++i) {
-//        printf("%lf ", K->weights[0][0][0][i]);
-//    }
-    print_kernel(K);
-
-    return 0;
+kernel *load_kernel_by_number(int number){
+    return load_single_kernel(kernels_data_sets[number], kernel_sizes[number][0], kernel_sizes[number][2],
+                              kernel_sizes[number][3]);
 }
+
+//int main() {
+////    printf("xd\n");
+////    printf("%s\n%d %d %d\n", kernels_data_sets[0], kernel_sizes[0][0], kernel_sizes[0][2], kernel_sizes[0][3]);
+////    kernel * K = load_single_kernel(kernels_data_sets[0], kernel_sizes[0][0], kernel_sizes[0][2], kernel_sizes[0][3]);
+////    printf("xd\n");
+////
+////    printf("%d %d %d\n", K->size, K->n_layers, K->n_filters);
+//////    for (int i = 0; i < 64; ++i) {
+//////        printf("%lf ", K->weights[0][0][0][i]);
+//////    }
+////    print_kernel(K);
+//
+//    kernel *K = load_single_kernel(kernels_data_sets[6], 3, 512, 1024);
+//    print_kernel(K);
+//    free_kernel(K);
+//
+//    return 0;
+//}

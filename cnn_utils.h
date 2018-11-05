@@ -69,13 +69,15 @@ kernel *test_kernel(int size, int n_layers, int n_filters);
 
 conv_layer *leaky_ReLu(conv_layer *L);
 
-void pad_0(conv_layer *L, int pad_range);
+conv_layer *pad_0(conv_layer *L, int pad_range);
 
 
 conv_layer *conv3D_paralel(conv_layer *L,  kernel *K, int stride, enum PADDING pad);
 
 conv_layer *conv3D( conv_layer *L,  kernel *K, int stride, enum PADDING pad);
 
-conv_layer *max_pool(conv_layer * L, int pool_size);
+conv_layer *max_pool(conv_layer * L, int pool_size, int stride);
 
 conv_layer *add_layers(conv_layer *L1, conv_layer *L2);
+
+conv_layer *add_bias(conv_layer *L, double bias);
