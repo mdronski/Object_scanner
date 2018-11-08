@@ -5,18 +5,18 @@
 
 #include "cnn_utils.h"
 
-typedef struct conv_step_struct {
-    double ***L;
-    double ***K;
-    int layers;
-    int filter_size;
-    int h_start;
-    int w_start;
-    double result;
-} conv_step_struct;
+//typedef struct conv_step_struct {
+//    double ***L;
+//    double ***K;
+//    int layers;
+//    int filter_size;
+//    int h_start;
+//    int w_start;
+//    double result;
+//} conv_step_struct;
 
 
-typedef struct {
+typedef struct  {
     int f;
     int h;
     int stride;
@@ -24,7 +24,7 @@ typedef struct {
     conv_layer *NL;
     kernel *K;
 
-}conv_row_struct;
+} conv_row_struct;
 
 
 double max_from_2D(double **A, int height, int width, int range){
@@ -39,15 +39,15 @@ double max_from_2D(double **A, int height, int width, int range){
 
 void print_kernel(kernel *K) {
     printf("size = %d, layers = %d, filters = %d\n", K->size, K->n_layers, K->n_filters);
-    for (int l = 0; l < K->n_layers; ++l) {
-        for (int h = 0; h < K->size; ++h) {
-            for (int w = 0; w < K->size; ++w) {
-                printf("%lf ", K->weights[0][l][h][w]);
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
+//    for (int l = 0; l < K->n_layers; ++l) {
+//        for (int h = 0; h < K->size; ++h) {
+//            for (int w = 0; w < K->size; ++w) {
+//                printf("%lf ", K->weights[0][l][h][w]);
+//            }
+//            printf("\n");
+//        }
+//        printf("\n");
+//    }
 }
 
 void print_conv_layer( conv_layer *L) {
@@ -97,7 +97,6 @@ conv_layer *allocate_conv_layer(int height, int width, int n_layers) {
 }
 
 kernel *allocate_kernel(int size, int n_layers, int n_filters) {
-//    printf("%d %d %d \n",size, n_layers, n_filters);
     kernel *K = malloc(sizeof(kernel));
     K->size = size;
     K->n_layers = n_layers;
@@ -106,12 +105,13 @@ kernel *allocate_kernel(int size, int n_layers, int n_filters) {
     double ****array = (double ****) malloc(n_filters * sizeof(double ***));
 
     for (int f = 0; f < n_filters; ++f) {
-        array[f] = (double ***) malloc(n_filters * sizeof(double **));
+        array[f] = (double ***) malloc(n_layers * sizeof(double **));
         for (int l = 0; l < n_layers; ++l) {
-            array[f][l] = (double **) malloc(n_layers * sizeof(double *));
+            array[f][l] = (double **) malloc(size * sizeof(double *));
             for (int h = 0; h < size; ++h) {
 //                printf("%d %d %d \n",f,l,h);
                 array[f][l][h] = (double *) malloc(size * sizeof(double));
+
             }
         }
     }
@@ -147,19 +147,19 @@ void free_kernel(kernel *K){
 }
 
 
-void *conv_step_paralel(void *args) {
-    conv_step_struct *S = (conv_step_struct *) args;
-
-    S->result = 0.0;
-
-    for (int l = 0; l < S->layers; ++l) {
-        for (int h = S->h_start; h < S->h_start + S->filter_size; ++h) {
-            for (int w = S->w_start; w < S->w_start + S->filter_size; ++w) {
-                S->result += S->L[l][h][w] * S->K[l][h - S->h_start][w - S->w_start];
-            }
-        }
-    }
-}
+//void *conv_step_paralel(void *args) {
+//    conv_step_struct *S = (conv_step_struct *) args;
+//
+//    S->result = 0.0;
+//
+//    for (int l = 0; l < S->layers; ++l) {
+//        for (int h = S->h_start; h < S->h_start + S->filter_size; ++h) {
+//            for (int w = S->w_start; w < S->w_start + S->filter_size; ++w) {
+//                S->result += S->L[l][h][w] * S->K[l][h - S->h_start][w - S->w_start];
+//            }
+//        }
+//    }
+//}
 
 double conv_step(double ***L, double ***K, int layers, int filter_size, int h_start, int w_start) {
     double sum = 0.0;

@@ -32,13 +32,6 @@ typedef struct kernel {
     double ****weights;
 } kernel;
 
-typedef struct cnn_block{
-    conv_layer *L;
-    kernel *K;
-    enum ACTIVATION activation;
-    int stride;
-    enum PADDING padding;
-};
 
 void print_kernel(kernel *K);
 

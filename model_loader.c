@@ -50,6 +50,7 @@ kernel *load_single_kernel(char *data_set, int size, int previous_filters, int c
     hid_t file_id, dataset_id;  /* identifiers */
     herr_t status;
     kernel *K = allocate_kernel(size, previous_filters, current_filters);
+//    print_kernel(K);
 //    printf("xd2\n");
     /* Open an existing file. */
     file_id = H5Fopen(FILE, H5F_ACC_RDWR, H5P_DEFAULT);
@@ -67,6 +68,7 @@ kernel *load_single_kernel(char *data_set, int size, int previous_filters, int c
             for (int l = 0; l < previous_filters; ++l) {
                 for (int f = 0; f < current_filters; ++f) {
 //                    printf("%d %d %d %d\n",h,w,l,f);
+
                     K->weights[f][l][h][w] =
                             array[ h*size*previous_filters*current_filters
                             + w*previous_filters*current_filters
