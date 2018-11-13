@@ -89,8 +89,8 @@ static int xioctl(int fh, int request, void *arg) {
 
 static void process_image(const void *p, int size) {
     if (out_buf && frame_counter > 50 && frame_counter % 1 == 0) {
-//        FILE *out_file = fopen("out.ppm", "w");
-//        fprintf(out_file, "P6\n%d %d\n255\n", witdh, height);
+        FILE *out_file = fopen("out.ppm", "w");
+        fprintf(out_file, "P6\n%d %d\n255\n", witdh, height);
 
         void *rgb_image = malloc(witdh * height * 3);
         __u8 *rgb_ptr = (__u8 *) rgb_image;
@@ -105,9 +105,9 @@ static void process_image(const void *p, int size) {
 //        for (int i = 0; i < witdh * height * 3; i++) {
 //            fprintf(out_file, "%c", rgb_ptr[i]);
 //        }
-//        fwrite(rgb_ptr, 1, witdh * height * 3, out_file);
+        fwrite(rgb_ptr, 1, witdh * height * 3, out_file);
 
-        fwrite(rgb_ptr, 1, witdh * height * 3, image_stream);
+//        fwrite(rgb_ptr, 1, witdh * height * 3, image_stream);
 
         free(rgb_image);
 //        fclose(out_file);

@@ -73,4 +73,6 @@ conv_layer *max_pool(conv_layer * L, int pool_size, int stride);
 
 conv_layer *add_layers(conv_layer *L1, conv_layer *L2);
 
-conv_layer *add_bias(conv_layer *L, double bias);
+conv_layer *add_bias(conv_layer *L, double* bias);
+
+double ***load_anchors(conv_layer *L, int start);

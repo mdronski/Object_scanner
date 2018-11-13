@@ -51,18 +51,18 @@ void print_kernel(kernel *K) {
 }
 
 void print_conv_layer( conv_layer *L) {
-    int n_layers = L->n_layers;
+    int n_layers = 1;
 
     printf("Size = %d x %d, layers = %d\n", L->height, L->width, L->n_layers);
-//    for (int l = 0; l < n_layers; ++l) {
-//        for (int h = 0; h < L->height; ++h) {
-//            for (int w = 0; w < L->width; ++w) {
-//                printf("%.3lf ", L->values[l][h][w]);
-//            }
-//            printf("\n");
-//        }
-//        printf("\n\n");
-//    }
+    for (int l = 0; l < n_layers; ++l) {
+        for (int h = 0; h < L->height; ++h) {
+            for (int w = 0; w < L->width; ++w) {
+                printf("%.3lf ", L->values[l][h][w]);
+            }
+            printf("\n");
+        }
+        printf("\n\n");
+    }
 }
 
 void print3D(double ***X, int depth, int height, int width) {
@@ -393,13 +393,13 @@ conv_layer *add_layers(conv_layer *L1, conv_layer *L2){
     return L3;
 }
 
-conv_layer *add_bias(conv_layer *L, double bias){
+conv_layer *add_bias(conv_layer *L, double* bias){
     conv_layer *L2 = allocate_conv_layer(L->height, L->width, L->n_layers);
 
     for (int l = 0; l < L->n_layers; ++l) {
         for (int h = 0; h < L->height; ++h) {
             for (int w = 0; w < L->width; ++w) {
-                L2->values[l][h][w] = L->values[l][h][w] + bias;
+                L2->values[l][h][w] = L->values[l][h][w] + bias[l];
             }
         }
     }
@@ -417,4 +417,32 @@ conv_layer *leaky_ReLu(conv_layer *L){
         }
     }
     return L2;
+}
+
+double ***load_anchors(conv_layer *L, int start){
+    double ***anchors = malloc(L->width*L->height * sizeof(double **));
+
+    for (int j = 0; j < L->width*L->height; ++j) {
+        anchors[j] = malloc(3 * sizeof(double *));
+
+        for (int i = 0; i < 3; ++i) {
+            anchors[j][i] = malloc(85 * sizeof(double));
+        }
+    }
+
+    for (int h = 0; h < L->height; ++h) {
+        for (int w = 0; w < L->width; ++w) {
+            for (int l = 0; l < L->n_layers; ++l) {
+
+                for (int i = 0; i < start; ++i) {
+                    for (int j = 0; j < 85; ++j) {
+                        anchors[h*L->width + w][i][j] = L->values[j + i*85][h][w];
+                    }
+
+                }
+            }
+        }
+    }
+
+    return anchors;
 }

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "cnn_utils.h"
-#define FILE "yolotiny.h5"
+#define FILE_NAME "yolotiny.h5"
 
 
 int kernel_sizes[13][4] = {
@@ -53,7 +53,7 @@ kernel *load_single_kernel(char *data_set, int size, int previous_filters, int c
 //    print_kernel(K);
 //    printf("xd2\n");
     /* Open an existing file. */
-    file_id = H5Fopen(FILE, H5F_ACC_RDWR, H5P_DEFAULT);
+    file_id = H5Fopen(FILE_NAME, H5F_ACC_RDWR, H5P_DEFAULT);
 //    printf("xd3\n");
     /* Open an existing dataset. */
     dataset_id = H5Dopen2(file_id, data_set, H5P_DEFAULT);
@@ -93,7 +93,7 @@ kernel *load_single_kernel(char *data_set, int size, int previous_filters, int c
 
 
 
-double* load_bias(char *data_set) {
+double* load_bias(int n) {
     double *bias = malloc(255 * sizeof(double));
 
     hid_t file_id, dataset_id;  /* identifiers */
@@ -101,9 +101,9 @@ double* load_bias(char *data_set) {
 
 
     /* Open an existing file. */
-    file_id = H5Fopen(FILE, H5F_ACC_RDWR, H5P_DEFAULT);
+    file_id = H5Fopen(FILE_NAME, H5F_ACC_RDWR, H5P_DEFAULT);
     /* Open an existing dataset. */
-    dataset_id = H5Dopen2(file_id, data_set, H5P_DEFAULT);
+    dataset_id = H5Dopen2(file_id, bias_data_sets[n], H5P_DEFAULT);
 
     status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
                      bias);
@@ -121,8 +121,8 @@ double* load_bias(char *data_set) {
 double **load_biases(){
     double **biases = malloc(2 * sizeof(double*));
 
-    biases[0] = load_bias(bias_data_sets[0]);
-    biases[1] = load_bias(bias_data_sets[1]);
+    biases[0] = load_bias(0);
+    biases[1] = load_bias(1);
 
     return biases;
 }
