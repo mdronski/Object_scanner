@@ -105,6 +105,7 @@ static void process_image(const void *p, int size) {
 //        for (int i = 0; i < witdh * height * 3; i++) {
 //            fprintf(out_file, "%c", rgb_ptr[i]);
 //        }
+
         fwrite(rgb_ptr, 1, witdh * height * 3, out_file);
 
 //        fwrite(rgb_ptr, 1, witdh * height * 3, image_stream);

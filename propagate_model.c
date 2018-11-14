@@ -30,13 +30,25 @@ conv_layer *load_image(){
         }
     }
 
-    return L;
+
+    conv_layer *L2 = allocate_conv_layer(416, 416, 3);
+
+    for (int h = 0; h < 416; ++h) {
+        for (int w = 0; w < 416; ++w) {
+            for (int l = 0; l < 3; ++l) {
+                L2->values[l][h][w] = L->values[l][h][w] / 255;
+            }
+        }
+    }
+
+    free_conv_layer(L);
+
+    return L2;
 }
 
 
 void run_model(){
 
-//    Pooling is wrong! check
     kernel *K;
     conv_layer *L;
     conv_layer *L2;
@@ -46,33 +58,52 @@ void run_model(){
     printf("\n");
 //    L = test_conv_layer(416, 416, 3);
     L = load_image();
-    print_conv_layer(L);
+//    print_conv_layer(L);
+
+    for (int l = 0; l < L->n_layers; l++) {
+        for (int h = 0; h < 3; ++h) {
+            for (int w = 0; w < 3; ++w) {
+                printf("%lf ", L->values[l][h][w]);
+            }
+            printf("\n");
+        }
+        printf("\n");
+
+    }
 
 //  1
     K = load_kernel_by_number(0);
     print_kernel(K);
     L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-    print_conv_layer(L2);
-    free_conv_layer(L);
+
+    printf("\n%lf\n", L2->values[0][0][0]);
+//    print_conv_layer(L2);
+//    free_conv_layer(L);
+
     L3 = leaky_ReLu(L2);
     L4 = max_pool(L3, 2, 2);
     printf("After pooling: ");
-    print_conv_layer(L4);
+//    print_conv_layer_one_l(L4);
+
+    return;
+
     L = L4;
     free_kernel(K);
     free_conv_layer(L2);
     free_conv_layer(L3);
 //    free_conv_layer(L4);
 
+
 //  2
     K = load_kernel_by_number(1);
+//    print_kernel(K);
     L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-    print_conv_layer(L2);
+    print_conv_layer_one_l(L2);
     free_conv_layer(L);
     L3 = leaky_ReLu(L2);
     L4 = max_pool(L3, 2, 2);
     printf("After pooling: ");
-    print_conv_layer(L4);
+    print_conv_layer_one_l(L4);
     L = L4;
     free_kernel(K);
     free_conv_layer(L2);
@@ -81,13 +112,15 @@ void run_model(){
 
 //  3
     K = load_kernel_by_number(2);
+//    print_kernel(K);
+
     L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-    print_conv_layer(L2);
+    print_conv_layer_one_l(L2);
     free_conv_layer(L);
     L3 = leaky_ReLu(L2);
     L4 = max_pool(L3, 2, 2);
     printf("After pooling: ");
-    print_conv_layer(L4);
+    print_conv_layer_one_l(L4);
     L = L4;
     free_kernel(K);
     free_conv_layer(L2);
@@ -97,13 +130,15 @@ void run_model(){
 
 //  4
     K = load_kernel_by_number(3);
+//    print_kernel(K);
+
     L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-    print_conv_layer(L2);
+    print_conv_layer_one_l(L2);
     free_conv_layer(L);
     L3 = leaky_ReLu(L2);
     L4 = max_pool(L3, 2, 2);
     printf("After pooling: ");
-    print_conv_layer(L4);
+    print_conv_layer_one_l(L4);
     L = L4;
     free_kernel(K);
     free_conv_layer(L2);
@@ -112,13 +147,15 @@ void run_model(){
 
 //  5
     K = load_kernel_by_number(4);
+    print_kernel(K);
+
     L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-    print_conv_layer(L2);
+    print_conv_layer_one_l(L2);
     free_conv_layer(L);
     L3 = leaky_ReLu(L2);
     L4 = max_pool(L3, 2, 2);
     printf("After pooling: ");
-    print_conv_layer(L4);
+    print_conv_layer_one_l(L4);
     L = L4;
     free_kernel(K);
     free_conv_layer(L2);
@@ -128,12 +165,12 @@ void run_model(){
 //  6
     K = load_kernel_by_number(5);
     L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-    print_conv_layer(L2);
+    print_conv_layer_one_l(L2);
     free_conv_layer(L);
     L3 = leaky_ReLu(L2);
     L4 = max_pool(L3, 2, 1);
     printf("After pooling: ");
-    print_conv_layer(L4);
+    print_conv_layer_one_l(L4);
     L = L4;
     free_kernel(K);
     free_conv_layer(L2);
@@ -143,7 +180,7 @@ void run_model(){
 //  7
     K = load_kernel_by_number(6);
     L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-    print_conv_layer(L2);
+    print_conv_layer_one_l(L2);
     free_conv_layer(L);
     L3 = leaky_ReLu(L2);
     L = L3;
@@ -155,7 +192,7 @@ void run_model(){
 //  8
     K = load_kernel_by_number(7);
     L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-    print_conv_layer(L2);
+    print_conv_layer_one_l(L2);
     free_conv_layer(L);
     L3 = leaky_ReLu(L2);
     L = L3;
@@ -167,7 +204,7 @@ void run_model(){
 //  9
     K = load_kernel_by_number(8);
     L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-    print_conv_layer(L2);
+    print_conv_layer_one_l(L2);
     free_conv_layer(L);
     L3 = leaky_ReLu(L2);
     L = L3;
@@ -178,7 +215,7 @@ void run_model(){
 //  10
     K = load_kernel_by_number(9);
     L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-    print_conv_layer(L2);
+    print_conv_layer_one_l(L2);
     free_conv_layer(L);
     double *bias = load_bias(0);
     L3 = add_bias(L2, bias);
@@ -210,6 +247,8 @@ int main(){
     run_model();
 
 //    conv_layer *L = test_conv_layer(10, 10, 3);
+//    conv_layer *L2 = max_pool(L, 2, 1);
+//    print_conv_layer(L2);
 //    kernel *K = test_kernel(1, 1024, 256);
 //    conv_layer *L2 = conv3D(L, K, 1, NO_PADDING);
 //

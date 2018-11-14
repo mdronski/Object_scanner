@@ -5,16 +5,6 @@
 
 #include "cnn_utils.h"
 
-//typedef struct conv_step_struct {
-//    double ***L;
-//    double ***K;
-//    int layers;
-//    int filter_size;
-//    int h_start;
-//    int w_start;
-//    double result;
-//} conv_step_struct;
-
 
 typedef struct  {
     int f;
@@ -27,31 +17,38 @@ typedef struct  {
 } conv_row_struct;
 
 
-double max_from_2D(double **A, int height, int width, int range){
-    double max = -999.0;
-    for (int h = height; h < height + range; ++h) {
-        for (int w = width; w < width + range; ++w) {
-            max = A[h][w] > max ? A[h][w] : max;
-        }
-    }
-    return max;
-}
 
 void print_kernel(kernel *K) {
     printf("size = %d, layers = %d, filters = %d\n", K->size, K->n_layers, K->n_filters);
-//    for (int l = 0; l < K->n_layers; ++l) {
-//        for (int h = 0; h < K->size; ++h) {
-//            for (int w = 0; w < K->size; ++w) {
-//                printf("%lf ", K->weights[0][l][h][w]);
-//            }
-//            printf("\n");
-//        }
-//        printf("\n");
-//    }
+    for (int l = 0; l < K->n_layers; ++l) {
+        for (int h = 0; h < K->size; ++h) {
+            for (int w = 0; w < K->size; ++w) {
+                printf("%lf ", K->weights[0][l][h][w]);
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
 }
 
-void print_conv_layer( conv_layer *L) {
+void print_conv_layer_one_l( conv_layer *L) {
     int n_layers = 1;
+
+    printf("Size = %d x %d, layers = %d\n", L->height, L->width, L->n_layers);
+    for (int l = 0; l < n_layers; ++l) {
+        for (int h = 0; h < L->height; ++h) {
+            for (int w = 0; w < L->width; ++w) {
+                printf("%.3lf ", L->values[l][h][w]);
+            }
+            printf("\n");
+        }
+        printf("\n\n");
+    }
+}
+
+
+void print_conv_layer( conv_layer *L) {
+    int n_layers = L->n_layers;
 
     printf("Size = %d x %d, layers = %d\n", L->height, L->width, L->n_layers);
     for (int l = 0; l < n_layers; ++l) {
@@ -356,6 +353,17 @@ kernel *test_kernel(int size, int n_layers, int n_filters) {
     return test_kernel;
 }
 
+double max_from_2D(double **A, int height, int width, int range){
+    double max = -999.0;
+    for (int h = height; h < height + range; ++h) {
+        for (int w = width; w < width + range; ++w) {
+            max = A[h][w] > max ? A[h][w] : max;
+        }
+    }
+    return max;
+}
+
+
 conv_layer *max_pool(conv_layer * L, int pool_size, int stride){
     conv_layer *L2 = NULL;
     if (stride == 1) {
@@ -363,12 +371,11 @@ conv_layer *max_pool(conv_layer * L, int pool_size, int stride){
     } else {
         L2 = allocate_conv_layer(L->height/2, L->width/2, L->n_layers);
     }
-//    print_conv_layer(L);
 
     for (int l = 0; l < L2->n_layers; ++l) {
-        for (int h = 0; h < L2->height; h += stride) {
-            for (int w = 0; w < L2->width; w += stride) {
-                L2->values[l][h][w] = max_from_2D(L->values[l], h, w, pool_size);
+        for (int h = 0; h < L2->height; h ++) {
+            for (int w = 0; w < L2->width; w ++) {
+                L2->values[l][h][w] = max_from_2D(L->values[l], h*stride, w*stride, pool_size);
             }
         }
     }

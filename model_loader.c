@@ -43,13 +43,14 @@ char *bias_data_sets[2] = {
         "/model_weights/conv2d_13/conv2d_13/bias:0"
 };
 
-kernel *load_single_kernel(char *data_set, int size, int previous_filters, int current_filters) {
+kernel *load_single_kernel(char *data_set, int size, int n_layers, int n_filters) {
 
-    double *array = malloc(size*size*previous_filters*current_filters* sizeof(double));
+    double *array = malloc(size*size*n_layers*n_filters* sizeof(double));
+
 
     hid_t file_id, dataset_id;  /* identifiers */
     herr_t status;
-    kernel *K = allocate_kernel(size, previous_filters, current_filters);
+    kernel *K = allocate_kernel(size, n_layers, n_filters);
 //    print_kernel(K);
 //    printf("xd2\n");
     /* Open an existing file. */
@@ -65,14 +66,20 @@ kernel *load_single_kernel(char *data_set, int size, int previous_filters, int c
 //    printf("xd4.5\n");
     for (int h = 0; h < size; ++h) {
         for (int w = 0; w < size; ++w) {
-            for (int l = 0; l < previous_filters; ++l) {
-                for (int f = 0; f < current_filters; ++f) {
+            for (int l = 0; l < n_layers; ++l) {
+                for (int f = 0; f < n_filters; ++f) {
 //                    printf("%d %d %d %d\n",h,w,l,f);
 
+//                    K->weights[f][l][h][w] =
+//                            array[h*size*n_layers*n_filters
+//                            + w*n_layers*n_filters
+//                            + l*n_filters
+//                            + f];
+//
                     K->weights[f][l][h][w] =
-                            array[ h*size*previous_filters*current_filters
-                            + w*previous_filters*current_filters
-                            + l*current_filters
+                            array[h*size*n_layers*n_filters
+                            + w*n_layers*n_filters
+                            + l*n_filters
                             + f];
                 }
             }

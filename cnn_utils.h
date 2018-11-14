@@ -37,6 +37,8 @@ void print_kernel(kernel *K);
 
 void print_conv_layer( conv_layer *L);
 
+void print_conv_layer_one_l( conv_layer *L);
+
 void print3D(double ***X, int depth, int height, int width);
 
 
