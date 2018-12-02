@@ -12,3 +12,12 @@ double **load_biases();
 kernel **load_kernels();
 
 kernel *load_kernel_by_number(int number);
+
+double *load_batch_normalization_beta(int n);
+
+double *load_batch_normalization_gamma(int n);
+
+double *load_batch_normalization_means(int n);
+
+double *load_batch_normalization_variances(int n);
+

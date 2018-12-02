@@ -73,6 +73,8 @@ conv_layer *conv3D( conv_layer *L,  kernel *K, int stride, enum PADDING pad);
 
 conv_layer *max_pool(conv_layer * L, int pool_size, int stride);
 
+conv_layer *batch_normalization(conv_layer *L, double *mean, double *variance, double *gamma, double *beta);
+
 conv_layer *add_layers(conv_layer *L1, conv_layer *L2);
 
 conv_layer *add_bias(conv_layer *L, double* bias);

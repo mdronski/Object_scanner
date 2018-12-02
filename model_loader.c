@@ -43,39 +43,202 @@ char *bias_data_sets[2] = {
         "/model_weights/conv2d_13/conv2d_13/bias:0"
 };
 
+char *batch_normalization_betas[11] = {
+        "/model_weights/batch_normalization_1/batch_normalization_1/beta:0",
+        "/model_weights/batch_normalization_2/batch_normalization_2/beta:0",
+        "/model_weights/batch_normalization_3/batch_normalization_3/beta:0",
+        "/model_weights/batch_normalization_4/batch_normalization_4/beta:0",
+        "/model_weights/batch_normalization_5/batch_normalization_5/beta:0",
+        "/model_weights/batch_normalization_6/batch_normalization_6/beta:0",
+        "/model_weights/batch_normalization_7/batch_normalization_7/beta:0",
+        "/model_weights/batch_normalization_8/batch_normalization_8/beta:0",
+        "/model_weights/batch_normalization_9/batch_normalization_9/beta:0",
+        "/model_weights/batch_normalization_10/batch_normalization_10/beta:0",
+        "/model_weights/batch_normalization_11/batch_normalization_11/beta:0",
+};
+
+char *batch_normalization_gammas[11] = {
+        "/model_weights/batch_normalization_1/batch_normalization_1/gamma:0",
+        "/model_weights/batch_normalization_2/batch_normalization_2/gamma:0",
+        "/model_weights/batch_normalization_3/batch_normalization_3/gamma:0",
+        "/model_weights/batch_normalization_4/batch_normalization_4/gamma:0",
+        "/model_weights/batch_normalization_5/batch_normalization_5/gamma:0",
+        "/model_weights/batch_normalization_6/batch_normalization_6/gamma:0",
+        "/model_weights/batch_normalization_7/batch_normalization_7/gamma:0",
+        "/model_weights/batch_normalization_8/batch_normalization_8/gamma:0",
+        "/model_weights/batch_normalization_9/batch_normalization_9/gamma:0",
+        "/model_weights/batch_normalization_10/batch_normalization_10/gamma:0",
+        "/model_weights/batch_normalization_11/batch_normalization_11/gamma:0",
+};
+
+char *batch_normalization_means[11] = {
+        "/model_weights/batch_normalization_1/batch_normalization_1/moving_mean:0",
+        "/model_weights/batch_normalization_2/batch_normalization_2/moving_mean:0",
+        "/model_weights/batch_normalization_3/batch_normalization_3/moving_mean:0",
+        "/model_weights/batch_normalization_4/batch_normalization_4/moving_mean:0",
+        "/model_weights/batch_normalization_5/batch_normalization_5/moving_mean:0",
+        "/model_weights/batch_normalization_6/batch_normalization_6/moving_mean:0",
+        "/model_weights/batch_normalization_7/batch_normalization_7/moving_mean:0",
+        "/model_weights/batch_normalization_8/batch_normalization_8/moving_mean:0",
+        "/model_weights/batch_normalization_9/batch_normalization_9/moving_mean:0",
+        "/model_weights/batch_normalization_10/batch_normalization_10/moving_mean:0",
+        "/model_weights/batch_normalization_11/batch_normalization_11/moving_mean:0",
+};
+
+char *batch_normalization_variances[11] = {
+        "/model_weights/batch_normalization_1/batch_normalization_1/moving_variance:0",
+        "/model_weights/batch_normalization_2/batch_normalization_2/moving_variance:0",
+        "/model_weights/batch_normalization_3/batch_normalization_3/moving_variance:0",
+        "/model_weights/batch_normalization_4/batch_normalization_4/moving_variance:0",
+        "/model_weights/batch_normalization_5/batch_normalization_5/moving_variance:0",
+        "/model_weights/batch_normalization_6/batch_normalization_6/moving_variance:0",
+        "/model_weights/batch_normalization_7/batch_normalization_7/moving_variance:0",
+        "/model_weights/batch_normalization_8/batch_normalization_8/moving_variance:0",
+        "/model_weights/batch_normalization_9/batch_normalization_9/moving_variance:0",
+        "/model_weights/batch_normalization_10/batch_normalization_10/moving_variance:0",
+        "/model_weights/batch_normalization_11/batch_normalization_11/moving_variance:0",
+};
+
+
+double *load_batch_normalization_means(int n){
+
+    double *means = malloc(kernel_sizes[n][3] * sizeof(double));
+
+    hid_t file_id, dataset_id;  /* identifiers */
+    herr_t status;
+    /* Open an existing file. */
+    file_id = H5Fopen(FILE_NAME, H5F_ACC_RDWR, H5P_DEFAULT);
+    /* Open an existing dataset. */
+    dataset_id = H5Dopen2(file_id, batch_normalization_means[n], H5P_DEFAULT);
+
+    status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+                     means);
+
+
+    /* Close the dataset. */
+    status = H5Dclose(dataset_id);
+    /* Close the file. */
+    status = H5Fclose(file_id);
+
+//    printf("Means =\n");
+//    for (int i = 0; i < kernel_sizes[n][3]; ++i) {
+//        printf("%lf ", means[i]);
+//    }
+//    printf("\n\n");
+
+    return means;
+}
+
+
+double *load_batch_normalization_variances(int n){
+
+    double *variances = malloc(kernel_sizes[n][3] * sizeof(double));
+
+    hid_t file_id, dataset_id;  /* identifiers */
+    herr_t status;
+    /* Open an existing file. */
+    file_id = H5Fopen(FILE_NAME, H5F_ACC_RDWR, H5P_DEFAULT);
+    /* Open an existing dataset. */
+    dataset_id = H5Dopen2(file_id, batch_normalization_variances[n], H5P_DEFAULT);
+
+    status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+                     variances);
+
+
+    /* Close the dataset. */
+    status = H5Dclose(dataset_id);
+    /* Close the file. */
+    status = H5Fclose(file_id);
+////
+//    printf("Variances =\n");
+//    for (int i = 0; i < kernel_sizes[n][3]; ++i) {
+//        printf("%lf ", variances[i]);
+//    }
+//    printf("\n\n");
+
+    return variances;
+}
+
+
+
+double *load_batch_normalization_beta(int n){
+
+    double *beta = malloc(kernel_sizes[n][3] * sizeof(double));
+
+    hid_t file_id, dataset_id;  /* identifiers */
+    herr_t status;
+    /* Open an existing file. */
+    file_id = H5Fopen(FILE_NAME, H5F_ACC_RDWR, H5P_DEFAULT);
+    /* Open an existing dataset. */
+    dataset_id = H5Dopen2(file_id, batch_normalization_betas[n], H5P_DEFAULT);
+
+    status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+                     beta);
+
+
+    /* Close the dataset. */
+    status = H5Dclose(dataset_id);
+    /* Close the file. */
+    status = H5Fclose(file_id);
+
+//    printf("Betas =\n");
+//    for (int i = 0; i < kernel_sizes[n][3]; ++i) {
+//        printf("%lf ", beta[i]);
+//    }
+//    printf("\n\n");
+
+    return beta;
+}
+
+
+double *load_batch_normalization_gamma(int n){
+
+    double *gamma = malloc(kernel_sizes[n][3] * sizeof(double));
+
+    hid_t file_id, dataset_id;  /* identifiers */
+    herr_t status;
+    /* Open an existing file. */
+    file_id = H5Fopen(FILE_NAME, H5F_ACC_RDWR, H5P_DEFAULT);
+    /* Open an existing dataset. */
+    dataset_id = H5Dopen2(file_id, batch_normalization_gammas[n], H5P_DEFAULT);
+
+    status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+                     gamma);
+
+    /* Close the dataset. */
+    status = H5Dclose(dataset_id);
+    /* Close the file. */
+    status = H5Fclose(file_id);
+
+//    printf("Gammas =\n");
+//    for (int i = 0; i < kernel_sizes[n][3]; ++i) {
+//        printf("%lf ", gamma[i]);
+//    }
+//    printf("\n\n");
+
+    return gamma;
+}
+
+
 kernel *load_single_kernel(char *data_set, int size, int n_layers, int n_filters) {
 
     double *array = malloc(size*size*n_layers*n_filters* sizeof(double));
 
-
     hid_t file_id, dataset_id;  /* identifiers */
     herr_t status;
     kernel *K = allocate_kernel(size, n_layers, n_filters);
-//    print_kernel(K);
-//    printf("xd2\n");
     /* Open an existing file. */
     file_id = H5Fopen(FILE_NAME, H5F_ACC_RDWR, H5P_DEFAULT);
-//    printf("xd3\n");
     /* Open an existing dataset. */
     dataset_id = H5Dopen2(file_id, data_set, H5P_DEFAULT);
-//    printf("xd4\n");
 
     status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
                      array);
 
-//    printf("xd4.5\n");
     for (int h = 0; h < size; ++h) {
         for (int w = 0; w < size; ++w) {
             for (int l = 0; l < n_layers; ++l) {
                 for (int f = 0; f < n_filters; ++f) {
-//                    printf("%d %d %d %d\n",h,w,l,f);
-
-//                    K->weights[f][l][h][w] =
-//                            array[h*size*n_layers*n_filters
-//                            + w*n_layers*n_filters
-//                            + l*n_filters
-//                            + f];
-//
                     K->weights[f][l][h][w] =
                             array[h*size*n_layers*n_filters
                             + w*n_layers*n_filters
@@ -88,8 +251,6 @@ kernel *load_single_kernel(char *data_set, int size, int n_layers, int n_filters
 
     free(array);
 
-
-//    printf("xd5\n");
     /* Close the dataset. */
     status = H5Dclose(dataset_id);
     /* Close the file. */

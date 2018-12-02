@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include <pthread.h>
 
@@ -19,47 +20,47 @@ typedef struct  {
 
 
 void print_kernel(kernel *K) {
-    printf("size = %d, layers = %d, filters = %d\n", K->size, K->n_layers, K->n_filters);
-    for (int l = 0; l < K->n_layers; ++l) {
-        for (int h = 0; h < K->size; ++h) {
-            for (int w = 0; w < K->size; ++w) {
-                printf("%lf ", K->weights[0][l][h][w]);
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
+    printf("Kernel: size = %d, layers = %d, filters = %d\n", K->size, K->n_layers, K->n_filters);
+//    for (int l = 0; l < K->n_layers; ++l) {
+//        for (int h = 0; h < K->size; ++h) {
+//            for (int w = 0; w < K->size; ++w) {
+//                printf("%lf ", K->weights[0][l][h][w]);
+//            }
+//            printf("\n");
+//        }
+//        printf("\n");
+//    }
 }
 
 void print_conv_layer_one_l( conv_layer *L) {
     int n_layers = 1;
 
     printf("Size = %d x %d, layers = %d\n", L->height, L->width, L->n_layers);
-    for (int l = 0; l < n_layers; ++l) {
-        for (int h = 0; h < L->height; ++h) {
-            for (int w = 0; w < L->width; ++w) {
-                printf("%.3lf ", L->values[l][h][w]);
-            }
-            printf("\n");
-        }
-        printf("\n\n");
-    }
+//    for (int l = 0; l < n_layers; ++l) {
+//        for (int h = 0; h < L->height; ++h) {
+//            for (int w = 0; w < L->width; ++w) {
+//                printf("%.3lf ", L->values[l][h][w]);
+//            }
+//            printf("\n");
+//        }
+//        printf("\n\n");
+//    }
 }
 
 
 void print_conv_layer( conv_layer *L) {
     int n_layers = L->n_layers;
 
-    printf("Size = %d x %d, layers = %d\n", L->height, L->width, L->n_layers);
-    for (int l = 0; l < n_layers; ++l) {
-        for (int h = 0; h < L->height; ++h) {
-            for (int w = 0; w < L->width; ++w) {
-                printf("%.3lf ", L->values[l][h][w]);
-            }
-            printf("\n");
-        }
-        printf("\n\n");
-    }
+    printf("Layer: Size = %d x %d, layers = %d\n", L->height, L->width, L->n_layers);
+//    for (int l = 0; l < n_layers; ++l) {
+//        for (int h = 0; h < L->height; ++h) {
+//            for (int w = 0; w < L->width; ++w) {
+//                printf("%.3lf ", L->values[l][h][w]);
+//            }
+//            printf("\n");
+//        }
+//        printf("\n\n");
+//    }
 }
 
 void print3D(double ***X, int depth, int height, int width) {
@@ -367,15 +368,75 @@ double max_from_2D(double **A, int height, int width, int range){
 conv_layer *max_pool(conv_layer * L, int pool_size, int stride){
     conv_layer *L2 = NULL;
     if (stride == 1) {
-        L2 = allocate_conv_layer((L->height - pool_size + 1), (L->width - pool_size + 1), L->n_layers);
+        L2 = allocate_conv_layer(L->height, L->width, L->n_layers);
+        for (int l = 0; l < L2->n_layers; ++l) {
+            for (int h = 0; h < L2->height; h ++) {
+                L2->values[l][h][L->width-1] = 0.0;
+            }
+            for (int w = 0; w < L2->width; w ++) {
+                L2->values[l][L->height-1][w] = 0.0;
+            }
+        }
+
+
+        for (int l = 0; l < L2->n_layers; ++l) {
+            for (int h = 0; h < L2->height-1; h ++) {
+                for (int w = 0; w < L2->width-1; w ++) {
+                    L2->values[l][h][w] = max_from_2D(L->values[l], h*stride, w*stride, pool_size);
+                }
+            }
+        }
+
     } else {
         L2 = allocate_conv_layer(L->height/2, L->width/2, L->n_layers);
+        for (int l = 0; l < L2->n_layers; ++l) {
+            for (int h = 0; h < L2->height; h ++) {
+                for (int w = 0; w < L2->width; w ++) {
+                    L2->values[l][h][w] = max_from_2D(L->values[l], h*stride, w*stride, pool_size);
+                }
+            }
+        }
     }
 
+    return L2;
+}
+
+conv_layer *batch_normalization(conv_layer *L, double *mean, double *variance, double *gamma, double *beta){
+
+
+//    double mean = 0.0;
+//
+//    for (int l = 0; l < L->n_layers; ++l) {
+//        for (int h = 0; h < L->height; ++h) {
+//            for (int w = 0; w < L->width; ++w) {
+//                mean += L->values[l][h][w];
+//            }
+//        }
+//    }
+//
+//    mean = mean / (L->n_layers * L->height * L->width);
+//
+//    double variance = 0.0;
+//
+//
+//    for (int l = 0; l < L->n_layers; ++l) {
+//        for (int h = 0; h < L->height; ++h) {
+//            for (int w = 0; w < L->width; ++w) {
+//                variance += (L->values[l][h][w] - mean) * (L->values[l][h][w] - mean);
+//            }
+//        }
+//    }
+//
+//    variance = variance / (L->n_layers * L->height * L->width);
+
+    conv_layer *L2 = allocate_conv_layer(L->height, L->width, L->n_layers);
+
     for (int l = 0; l < L2->n_layers; ++l) {
-        for (int h = 0; h < L2->height; h ++) {
-            for (int w = 0; w < L2->width; w ++) {
-                L2->values[l][h][w] = max_from_2D(L->values[l], h*stride, w*stride, pool_size);
+        for (int h = 0; h < L2->height; ++h) {
+            for (int w = 0; w < L2->width; ++w) {
+                L2->values[l][h][w] =
+                        gamma[l] * ((L->values[l][h][w]  - mean[l]) / sqrt(variance[l] + 0.001)) + beta[l];
+//                L2->values[l][h][w] = gamma[l] * L->values[l][h][w] + beta[l];
             }
         }
     }
@@ -419,7 +480,7 @@ conv_layer *leaky_ReLu(conv_layer *L){
     for (int l = 0; l < L->n_layers; ++l) {
         for (int h = 0; h < L->height; ++h) {
             for (int w = 0; w < L->width; ++w) {
-                L2->values[l][h][w] = MAX(L->values[l][h][w], 0.01);
+                L2->values[l][h][w] = L->values[l][h][w] > 0 ? L->values[l][h][w] : L->values[l][h][w] * 0.1;
             }
         }
     }
