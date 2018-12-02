@@ -175,13 +175,19 @@ void run_model(){
 ////    printf("\n%lf\n", L5->values[0][0][2]);
 ////    print_conv_layer_one_l(L4);
 
+//  1-4
     L1 = conv_block_wrapper_with_pool(L, 0, 2, 2);
+//  5-8
     L2 = conv_block_wrapper_with_pool(L1, 1, 2, 2);
 
+//  9-12
     L1 = conv_block_wrapper_with_pool(L2, 2, 2, 2);
+//  13-16
     L2 = conv_block_wrapper_with_pool(L1, 3, 2, 2);
 
+//  17-20
     L1 = conv_block_wrapper_with_pool(L2, 4, 2, 2);
+//  21-24
     L2 = conv_block_wrapper_with_pool(L1, 5, 2, 1);
 
 //    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
@@ -189,31 +195,50 @@ void run_model(){
 //    printf("\n%lf", L2->values[0][0][1]);
 //    printf("\n%lf\n\n", L2->values[0][0][2]);
 
-
+//  25-27
     L1 = conv_block_wrapper_no_pool(L2, 6);
+//  28-30
     L2 = conv_block_wrapper_no_pool(L1, 7);
-
-    L1 = conv_block_wrapper_no_pool(L2, 8);
-    L2 = conv_block_wrapper_no_pool(L1, 9);
-
-
-//    printf("\n%dx%d %d\n", L1->height, L->width, L1->n_layers);
-//    printf("\n%lf\n", L1->values[0][0][0]);
-//    printf("\n%lf\n", L1->values[0][0][1]);
-//    printf("\n%lf\n", L1->values[0][0][2]);
 
 //    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
 //    printf("\n%lf\n", L2->values[0][0][0]);
 //    printf("\n%lf\n", L2->values[0][0][1]);
 //    printf("\n%lf\n", L2->values[0][0][2]);
 
-    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
-    printf("\n%lf ", L2->values[0][0][0]);
-    printf("\n%lf ", L2->values[1][0][0]);
-    printf("\n%lf ", L2->values[2][0][0]);
-    printf("\n%lf ", L2->values[3][0][0]);
-    printf("\n%lf ", L2->values[4][0][0]);
-    printf("\n%lf\n", L2->values[5][0][0]);
+
+    L1 = conv_block_wrapper_no_pool(L2, 8);
+
+//    printf("\n%dx%d %d\n", L1->height, L->width, L1->n_layers);
+//    printf("\n%lf\n", L1->values[0][0][0]);
+//    printf("\n%lf\n", L1->values[0][0][1]);
+//    printf("\n%lf\n", L1->values[0][0][2]);
+
+
+    K = load_kernel_by_number(9);
+    print_kernel(K);
+    L2 = conv3D_paralel(L1, K, 1, ZERO_PADDING);
+
+    print_pred_layer_anchor(L2);
+
+//
+//    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
+//    printf("\n%lf\n", L2->values[0][0][0]);
+//    printf("\n%lf\n", L2->values[0][0][1]);
+//    printf("\n%lf\n", L2->values[0][0][2]);
+//    printf("\n%lf\n", L2->values[0][0][L2->width-1]);
+//
+
+//    [[32.303703   3.1947038 -8.289908  30.665462  48.937305 ]]
+//    2 [[ -2.4656894 -14.658622  -11.760943   -3.6249452 136.50597  ]]
+
+
+//    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
+//    printf("\n%lf ", L2->values[0][0][0]);
+//    printf("\n%lf ", L2->values[1][0][0]);
+//    printf("\n%lf ", L2->values[2][0][0]);
+//    printf("\n%lf ", L2->values[3][0][0]);
+//    printf("\n%lf ", L2->values[4][0][0]);
+//    printf("\n%lf\n", L2->values[5][0][0]);
 
 
 

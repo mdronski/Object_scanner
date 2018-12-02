@@ -32,19 +32,31 @@ void print_kernel(kernel *K) {
 //    }
 }
 
-void print_conv_layer_one_l( conv_layer *L) {
+
+void print_pred_layer_anchor(conv_layer *L) {
+
+    printf("Size = %d x %d, layers = %d\n", L->height, L->width, L->n_layers);
+    for (int l = 0; l < 85; ++l) {
+        printf("%.3lf \n", L->values[l][1][1]);
+    }
+    printf("\n\n");
+
+}
+
+
+void print_conv_layer_one_l(conv_layer *L) {
     int n_layers = 1;
 
     printf("Size = %d x %d, layers = %d\n", L->height, L->width, L->n_layers);
-//    for (int l = 0; l < n_layers; ++l) {
-//        for (int h = 0; h < L->height; ++h) {
-//            for (int w = 0; w < L->width; ++w) {
-//                printf("%.3lf ", L->values[l][h][w]);
-//            }
-//            printf("\n");
-//        }
-//        printf("\n\n");
-//    }
+    for (int l = 0; l < n_layers; ++l) {
+        for (int h = 0; h < L->height; ++h) {
+            for (int w = 0; w < L->width; ++w) {
+                printf("%.3lf ", L->values[l][h][w]);
+            }
+            printf("\n");
+        }
+        printf("\n\n");
+    }
 }
 
 

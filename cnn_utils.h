@@ -41,6 +41,7 @@ void print_conv_layer_one_l( conv_layer *L);
 
 void print3D(double ***X, int depth, int height, int width);
 
+void print_pred_layer_anchor(conv_layer *L);
 
 conv_layer *allocate_conv_layer(int height, int width, int n_layers);
 
