@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/resource.h>
-#include "model_loader.c"
+#include "yolo_utils.h"
 
 
-conv_layer *load_image(){
+conv_layer *load_image() {
     char buffer[256];
     size_t len = 256;
     FILE *f = fopen("out.ppm", "r");
@@ -14,7 +14,7 @@ conv_layer *load_image(){
     int width = 640;
     int height = 480;
     size_t img_size = (size_t) (3 * width * height);
-    __uint8_t *image = malloc(width*height*3 * sizeof(__uint8_t));
+    __uint8_t *image = malloc(width * height * 3 * sizeof(__uint8_t));
 
     fread(image, img_size, 1, f);
 //    printf("%c\n", image[0]);
@@ -24,7 +24,7 @@ conv_layer *load_image(){
         for (int w = 0; w < L->width; ++w) {
             for (int l = 0; l < 3; ++l) {
 //                printf("%d\n", image[h*width*3 + 3*w + l]);
-                L->values[l][h][w] = (double) image[h*width*3 + 3*w + l];
+                L->values[l][h][w] = (double) image[h * width * 3 + 3 * w + l];
 //                printf("%lf\n", L->values[l][h][w]);
             }
         }
@@ -46,17 +46,21 @@ conv_layer *load_image(){
     return L2;
 }
 
-conv_layer *load_resized_image(){
-    char buffer[256];
+conv_layer *load_resized_image() {
+    char *buffer = malloc(256 * sizeof(char));
     size_t len = 256;
-    FILE *f = fopen("out_resized.ppm", "r");
+    FILE *f = fopen("correct_resized.ppm", "r");
+
+    if (f == NULL) {
+        printf("Load error\n");
+    }
     getline(&buffer, &len, f);
     getline(&buffer, &len, f);
     getline(&buffer, &len, f);
     int width = 416;
     int height = 416;
     size_t img_size = (size_t) (3 * width * height);
-    __uint8_t *image = malloc(width*height*3 * sizeof(__uint8_t));
+    __uint8_t *image = malloc(width * height * 3 * sizeof(__uint8_t));
 
     fread(image, img_size, 1, f);
     conv_layer *L = allocate_conv_layer(height, width, 3);
@@ -64,7 +68,7 @@ conv_layer *load_resized_image(){
     for (int h = 0; h < L->height; ++h) {
         for (int w = 0; w < L->width; ++w) {
             for (int l = 0; l < 3; ++l) {
-                L->values[l][h][w] = (double) image[h*width*3 + 3*w + l];
+                L->values[l][h][w] = (double) image[h * width * 3 + 3 * w + l];
             }
         }
     }
@@ -73,7 +77,7 @@ conv_layer *load_resized_image(){
     return L;
 }
 
-void save_image(conv_layer *L){
+void save_image(conv_layer *L) {
     int width = 416;
     int height = 416;
     FILE *f = fopen("load_function_test.ppm", "wc");
@@ -83,8 +87,8 @@ void save_image(conv_layer *L){
     for (int h = 0; h < L->height; ++h) {
         for (int w = 0; w < L->width; ++w) {
             for (int l = 0; l < 3; ++l) {
-                __uint8_t  c = (__uint8_t) L->values[l][h][w];
-                if (h == 0 && w == 0){
+                __uint8_t c = (__uint8_t) L->values[l][h][w];
+                if (h == 0 && w == 0) {
                     printf("%d %lf\n", c, L->values[l][h][w]);
                 }
                 fprintf(f, "%c", c);
@@ -95,12 +99,12 @@ void save_image(conv_layer *L){
 
 }
 
-conv_layer *batch_norm_wrapper(conv_layer *L, int n){
+conv_layer *batch_norm_wrapper(conv_layer *L, int n) {
     return batch_normalization(L, load_batch_normalization_means(n), load_batch_normalization_variances(n),
                                load_batch_normalization_gamma(n), load_batch_normalization_beta(n));
 }
 
-conv_layer *conv_block_wrapper_with_pool(conv_layer *L, int n, int pool_size, int pool_stride){
+conv_layer *conv_block_wrapper_with_pool(conv_layer *L, int n, int pool_size, int pool_stride) {
     printf("Block nr %d\n", n);
     kernel *K = load_kernel_by_number(n);
     print_kernel(K);
@@ -115,7 +119,7 @@ conv_layer *conv_block_wrapper_with_pool(conv_layer *L, int n, int pool_size, in
     return L5;
 }
 
-conv_layer *conv_block_wrapper_no_pool(conv_layer *L, int n){
+conv_layer *conv_block_wrapper_no_pool(conv_layer *L, int n) {
     printf("Block nr %d\n", n);
     kernel *K = load_kernel_by_number(n);
     print_kernel(K);
@@ -128,7 +132,7 @@ conv_layer *conv_block_wrapper_no_pool(conv_layer *L, int n){
     return L4;
 }
 
-void run_model(){
+void run_model() {
 
     kernel *K;
     conv_layer *L;
@@ -202,23 +206,106 @@ void run_model(){
 
 //    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
 //    printf("\n%lf\n", L2->values[0][0][0]);
-//    printf("\n%lf\n", L2->values[0][0][1]);
-//    printf("\n%lf\n", L2->values[0][0][2]);
-
+//    printf("\n%lf\n", L2->values[1][0][0]);
+//    printf("\n%lf\n", L2->values[2][0][0]);
+//
 
     L1 = conv_block_wrapper_no_pool(L2, 8);
 
-//    printf("\n%dx%d %d\n", L1->height, L->width, L1->n_layers);
+
+//    printf("\n%dx%d %d\n", L1->height, L1->width, L1->n_layers);
 //    printf("\n%lf\n", L1->values[0][0][0]);
-//    printf("\n%lf\n", L1->values[0][0][1]);
-//    printf("\n%lf\n", L1->values[0][0][2]);
+//    printf("\n%lf\n", L1->values[1][0][0]);
+//    printf("\n%lf\n", L1->values[2][0][0]);
+//
+//    person 0.87 (42, 118) (309, 351)
+//    height = 267 width = 233
+//    center = (175.5, 234.5)
+//    0.15511817799961136
 
 
     K = load_kernel_by_number(9);
     print_kernel(K);
     L2 = conv3D_paralel(L1, K, 1, ZERO_PADDING);
+    print_conv_layer(L2);
 
-    print_pred_layer_anchor(L2);
+//    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
+//    printf("\n%lf\n", L2->values[0][0][0]);
+//    printf("\n%lf\n", L2->values[1][0][0]);
+//    printf("\n%lf\n", L2->values[2][0][0]);
+//
+
+
+    yolo_box ****boxes = malloc(13 * sizeof(yolo_box ****));
+    for (int i = 0; i < 13; ++i) {
+        boxes[i] = malloc(13 * sizeof(yolo_box ***));
+        for (int j = 0; j < 13; ++j) {
+            boxes[i][j] = malloc(3 * sizeof(yolo_box **));
+        }
+    }
+
+    for (int i = 0; i < 13; ++i) {
+        for (int j = 0; j < 13; ++j) {
+            for (int k = 0; k < 3; ++k) {
+                double tx = L2->values[0 + k * 85][i][j];
+                double ty = L2->values[1 + k * 85][i][j];
+                double tw = L2->values[2 + k * 85][i][j];
+                double th = L2->values[3 + k * 85][i][j];
+                double prob = L2->values[4 + k * 85][i][j];
+                int cell_x = i;
+                int cell_y = j;
+                int anchor_width = 344;
+                int anchor_height = 318;
+                int image_width = 416;
+                int image_height = 416;
+                boxes[i][j][k] = get_yolo_box(tx, ty, tw, th, prob, cell_x, cell_y, anchor_width, anchor_height,
+                                              image_width, image_height);
+            }
+        }
+    }
+
+    softmax(boxes, L2);
+
+    for (int i = 0; i < 13; ++i) {
+        for (int j = 0; j < 13; ++j) {
+            for (int k = 0; k < 3; ++k) {
+                if(boxes[i][j][k]->confidence > 2 && boxes[i][j][k]->class_probability > 0.8){
+                    double tx = L2->values[0 + k * 85][i][j];
+                    double ty = L2->values[1 + k * 85][i][j];
+                    double tw = L2->values[2 + k * 85][i][j];
+                    double th = L2->values[3 + k * 85][i][j];
+                    printf("%lf\n", boxes[i][j][k]->confidence);
+                    printf("%d\n", boxes[i][j][k]->class);
+                    printf("%d %d %d %lf\n", i, j, k, boxes[i][j][k]->class_probability);
+//                    printf("%lf %lf %lf %lf\n", tx,ty,tw,th);
+                    printf("(%.1lf, %.1lf), (%.1lf, %1.lf)\n", boxes[i][j][k]->left_up_x, boxes[i][j][k]->left_up_y, boxes[i][j][k]->right_bottom_x, boxes[i][j][k]->right_bottom_y );
+                    printf("\n");
+                }
+
+//                if (boxes[i][j][k]->confidence > 10.0) {
+//                    printf("%lf\n", boxes[i][j][k]->confidence);
+//                    printf("%d\n", boxes[i][j][k]->class);
+//                    printf("%lf\n", boxes[i][j][k]->class_probability);
+//                    printf("\n");
+//                }
+            }
+        }
+    }
+
+
+
+//    for (int i = 0; i < 13; ++i) {
+//        for (int j = 0; j < 13; ++j) {
+//            for (int k = 0; k < 3; ++k) {
+//                if (boxes[i][j][k]->confidence > 10.0){
+//                    print_yolo_box(boxes[i][j][k]);
+//                }
+////                if (i==7 && j==5 && k==2){
+////                    printf("%lf, %lf, %lf, %lf, %d, %d\n", tx, ty, tw, th, cell_x, cell_y);
+////                }
+//            }
+//        }
+//    }
 
 //
 //    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
@@ -242,163 +329,10 @@ void run_model(){
 
 
 
-    return;
-
-//    L = L4;
-//    free_kernel(K);
-//    free_conv_layer(L2);
-//    free_conv_layer(L3);
-////    free_conv_layer(L4);
-//
-//
-////  2
-//    K = load_kernel_by_number(1);
-////    print_kernel(K);
-//    L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-//    print_conv_layer_one_l(L2);
-//    free_conv_layer(L);
-//    L3 = leaky_ReLu(L2);
-//    L4 = max_pool(L3, 2, 2);
-//    printf("After pooling: ");
-//    print_conv_layer_one_l(L4);
-//    L = L4;
-//    free_kernel(K);
-//    free_conv_layer(L2);
-//    free_conv_layer(L3);
-////    free_conv_layer(L4);
-//
-////  3
-//    K = load_kernel_by_number(2);
-////    print_kernel(K);
-//
-//    L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-//    print_conv_layer_one_l(L2);
-//    free_conv_layer(L);
-//    L3 = leaky_ReLu(L2);
-//    L4 = max_pool(L3, 2, 2);
-//    printf("After pooling: ");
-//    print_conv_layer_one_l(L4);
-//    L = L4;
-//    free_kernel(K);
-//    free_conv_layer(L2);
-//    free_conv_layer(L3);
-////    free_conv_layer(L4);
-//
-//
-////  4
-//    K = load_kernel_by_number(3);
-////    print_kernel(K);
-//
-//    L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-//    print_conv_layer_one_l(L2);
-//    free_conv_layer(L);
-//    L3 = leaky_ReLu(L2);
-//    L4 = max_pool(L3, 2, 2);
-//    printf("After pooling: ");
-//    print_conv_layer_one_l(L4);
-//    L = L4;
-//    free_kernel(K);
-//    free_conv_layer(L2);
-//    free_conv_layer(L3);
-////    free_conv_layer(L4);
-//
-////  5
-//    K = load_kernel_by_number(4);
-//    print_kernel(K);
-//
-//    L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-//    print_conv_layer_one_l(L2);
-//    free_conv_layer(L);
-//    L3 = leaky_ReLu(L2);
-//    L4 = max_pool(L3, 2, 2);
-//    printf("After pooling: ");
-//    print_conv_layer_one_l(L4);
-//    L = L4;
-//    free_kernel(K);
-//    free_conv_layer(L2);
-//    free_conv_layer(L3);
-////    free_conv_layer(L4);
-//
-////  6
-//    K = load_kernel_by_number(5);
-//    L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-//    print_conv_layer_one_l(L2);
-//    free_conv_layer(L);
-//    L3 = leaky_ReLu(L2);
-//    L4 = max_pool(L3, 2, 1);
-//    printf("After pooling: ");
-//    print_conv_layer_one_l(L4);
-//    L = L4;
-//    free_kernel(K);
-//    free_conv_layer(L2);
-//    free_conv_layer(L3);
-////    free_conv_layer(L4);
-//
-////  7
-//    K = load_kernel_by_number(6);
-//    L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-//    print_conv_layer_one_l(L2);
-//    free_conv_layer(L);
-//    L3 = leaky_ReLu(L2);
-//    L = L3;
-//    free_kernel(K);
-//    free_conv_layer(L2);
-////    free_conv_layer(L3);
-//
-//
-////  8
-//    K = load_kernel_by_number(7);
-//    L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-//    print_conv_layer_one_l(L2);
-//    free_conv_layer(L);
-//    L3 = leaky_ReLu(L2);
-//    L = L3;
-//    free_kernel(K);
-//    free_conv_layer(L2);
-////    free_conv_layer(L3);
-//
-//
-////  9
-//    K = load_kernel_by_number(8);
-//    L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-//    print_conv_layer_one_l(L2);
-//    free_conv_layer(L);
-//    L3 = leaky_ReLu(L2);
-//    L = L3;
-//    free_kernel(K);
-//    free_conv_layer(L2);
-////    free_conv_layer(L3);
-//
-////  10
-//    K = load_kernel_by_number(9);
-//    L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-//    print_conv_layer_one_l(L2);
-//    free_conv_layer(L);
-//    double *bias = load_bias(0);
-//    L3 = add_bias(L2, bias);
-//    L = L3;
-//    free_kernel(K);
-//    free_conv_layer(L2);
-////    free_conv_layer(L3);
-//
-//    double ***anchors = load_anchors(L, 3);
-//
-//    print_conv_layer(L);
-//    free_conv_layer(L);
-//
-//    for (int j = 0; j < 85; ++j) {
-//        printf("%lf\t%lf\t%lf\n", anchors[0][0][j], anchors[0][1][j], anchors[0][2][j]);
-////    }
-
-
-
-
 }
 
 
-
-int main(){
-
+int main() {
 
 
     run_model();
