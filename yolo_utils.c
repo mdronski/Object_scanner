@@ -4,25 +4,52 @@
 
 yolo_box *
 get_yolo_box(double tx, double ty, double tw, double th, double prob, int cell_x, int cell_y, int anchor_width,
-             int anchor_height, int image_width, int image_height) {
+             int anchor_height, int image_width, int image_height, int grid_size) {
+
     yolo_box *box = malloc(sizeof(yolo_box));
 
-    box->x = (1 / (1 + exp(-tx)) + (double) cell_x) * ((double) image_width / 13);
-    box->y = (1 / (1 + exp(-ty)) + (double) cell_y) * ((double) image_height / 13);
-    box->width = (anchor_width * exp(tw)) > image_height ? image_height : (anchor_width * exp(tw));
-    box->height = (anchor_height * exp(th)) > image_width ? image_width : (anchor_height * exp(th));
+    box->x = (1 / (1 + exp(-tx)) + (double) cell_x) * ((double) image_width / grid_size);
+    box->y = (1 / (1 + exp(-ty)) + (double) cell_y) * ((double) image_height / grid_size);
+
+//    double tmp_y = box->y;
+//    box->y = box->x;
+//    box->x = tmp_y;
+
+    box->width = (anchor_width * exp(tw)) > image_width ? (double) image_width * 0.5  : (anchor_width * exp(tw)) * 0.5 ;
+    box->height = (anchor_height * exp(th)) > image_height ? (double) image_height * 0.5 : (anchor_height * exp(th)) * 0.5 ;
     box->confidence = prob;
 
-    if ((anchor_width * exp(tw)) > image_width || (anchor_height * exp(th)) > image_height)
+    box->x_min = (box->x - box->width/2) < 0 ? 0 : (box->x - box->width/2);
+    box->y_max = (box->y + box->height/2) > image_height ? image_height : (box->y + box->height/2);
+
+    box->x_max = (box->x + box->width/2) > image_width ? image_width : (box->x + box->width/2);
+    box->y_min = (box->y - box->height/2) < 0 ? 0 : (box->y - box->height/2);
+
+//    tmp_y = box->y_max;
+//    box->y_max = box->y_min;
+//    box->y_min = tmp_y;
+
+    double jiter = 0.3;
+    if (box->width < jiter*image_width|| box->height < jiter*image_height ){
         box->confidence = -1.0;
+    }
 
-    box->left_up_x = box->x - box->width/2;
-    box->left_up_y = box->y - box->height/2;
+//    double jiter2 = 0.9;
+//    if (box->width > jiter2*image_width || box->height > jiter2*image_height){
+//        box->confidence = -1.0;
+//    }
 
-    box->right_bottom_x= box->x + box->width/2;
-    box->right_bottom_y= box->y + box->height/2;
-
+//    if (box->y_max > 415.0 || box->x_min < 0.5 || box->x_max > 415.0 || box->y_min < 1.0){
+//        box->confidence = -1.0;
+//    }
     return box;
+}
+
+void correct_yolo_box(yolo_box *box, int image_width, int image_height, int grid_size){
+
+
+
+
 }
 
 void print_yolo_box(yolo_box *box) {

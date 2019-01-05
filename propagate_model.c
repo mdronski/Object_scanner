@@ -49,7 +49,7 @@ conv_layer *load_image() {
 conv_layer *load_resized_image() {
     char *buffer = malloc(256 * sizeof(char));
     size_t len = 256;
-    FILE *f = fopen("correct_resized.ppm", "r");
+    FILE *f = fopen("correct_resized_trump.ppm", "r");
 
     if (f == NULL) {
         printf("Load error\n");
@@ -80,7 +80,7 @@ conv_layer *load_resized_image() {
 void save_image(conv_layer *L) {
     int width = 416;
     int height = 416;
-    FILE *f = fopen("load_function_test.ppm", "wc");
+    FILE *f = fopen("test_bounding_box.ppm", "wc");
     fprintf(f, "P6\n%d %d\n255\n", width, height);
 
 
@@ -89,7 +89,7 @@ void save_image(conv_layer *L) {
             for (int l = 0; l < 3; ++l) {
                 __uint8_t c = (__uint8_t) L->values[l][h][w];
                 if (h == 0 && w == 0) {
-                    printf("%d %lf\n", c, L->values[l][h][w]);
+//                    printf("%d %lf\n", c, L->values[l][h][w]);
                 }
                 fprintf(f, "%c", c);
             }
@@ -98,6 +98,84 @@ void save_image(conv_layer *L) {
 
 
 }
+
+void draw_boxes(conv_layer *L, yolo_box ****boxes) {
+    for (int i = 0; i < 13; ++i) {
+        for (int j = 0; j < 13; ++j) {
+            for (int k = 0; k < 3; ++k) {
+                if (boxes[i][j][k]->confidence > 15 &&
+                    boxes[i][j][k]->class_probability > 0.9 &&
+                        (boxes[i][j][k]->class == 1)){
+                    printf("xd\n");
+//                    printf("%d %d\n", (int) boxes[i][j][k]->y_min, (int) boxes[i][j][k]->y_max);
+//                    printf("%d %d\n", (int) boxes[i][j][k]->x_min, (int) boxes[i][j][k]->x_max);
+                        int x = (int) boxes[i][j][k] -> x;
+                        int y = (int) boxes[i][j][k] -> y;
+//
+                    L->values[0][y][x] = 255;
+                    L->values[0][y][x+1] = 255;
+                    L->values[0][y+1][x] = 255;
+                    L->values[0][y+1][x+1] = 255;
+
+
+                    L->values[1][y][x] = 255;
+                    L->values[1][y][x+1] = 255;
+                    L->values[1][y+1][x] = 255;
+                    L->values[1][y+1][x+1] = 255;
+
+
+                    L->values[2][y][x] = 255;
+                    L->values[2][y][x+1] = 255;
+                    L->values[2][y+1][x] = 255;
+                    L->values[2][y+1][x+1] = 255;
+
+//
+//                    L->values[0][x][y] = 255;
+//                    L->values[0][x][y+1] = 255;
+//                    L->values[0][x+1][y] = 255;
+//                    L->values[0][x+1][y+1] = 255;
+//
+//                    L->values[1][x][y] = 255;
+//                    L->values[1][x][y+1] = 255;
+//                    L->values[1][x+1][y] = 255;
+//                    L->values[1][x+1][y+1] = 255;
+//
+//                    L->values[2][x][y] = 255;
+//                    L->values[2][x][y+1] = 255;
+//                    L->values[2][x+1][y] = 255;
+//                    L->values[2][x+1][y+1] = 255;
+
+                    for (int h = (int) boxes[i][j][k]->y_min; h < boxes[i][j][k]->y_max; ++h) {
+                        int ws = (int) boxes[i][j][k]->x_min + 1;
+                        int wk = (int) boxes[i][j][k]->x_max - 1;
+                        L->values[0][h][ws] = 255;
+                        L->values[1][h][ws] = 255;
+                        L->values[2][h][ws] = 255;
+
+                        L->values[0][h][wk] = 255;
+                        L->values[1][h][wk] = 255;
+                        L->values[2][h][wk] = 255;
+                    }
+
+                    for (int w = (int) boxes[i][j][k]->x_min; w < boxes[i][j][k]->x_max; ++w) {
+                        int hs = (int) boxes[i][j][k]->y_min + 1;
+                        int hk = (int) boxes[i][j][k]->y_max - 1;
+
+                        L->values[0][hs][w] = 255;
+                        L->values[1][hs][w] = 255;
+                        L->values[2][hs][w] = 255;
+
+                        L->values[0][hk][w] = 255;
+                        L->values[1][hk][w] = 255;
+                        L->values[2][hk][w] = 255;
+                    }
+                }
+            }
+        }
+    }
+    save_image(L);
+}
+
 
 conv_layer *batch_norm_wrapper(conv_layer *L, int n) {
     return batch_normalization(L, load_batch_normalization_means(n), load_batch_normalization_variances(n),
@@ -138,46 +216,7 @@ void run_model() {
     conv_layer *L;
     conv_layer *L1;
     conv_layer *L2;
-    conv_layer *L3;
-    conv_layer *L4;
-    conv_layer *L5;
     L = load_resized_image();
-
-////  1
-//    K = load_kernel_by_number(0);
-////    print_kernel(K);
-//    L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
-////
-////    printf("\n%d %d\n", L2->height, L2->n_layers);
-////    printf("\n%lf\n", L2->values[0][0][0]);
-////    printf("\n%lf\n", L2->values[0][0][1]);
-////    printf("\n%lf\n", L2->values[0][0][2]);
-////
-//
-////    print_conv_layer(L2);
-////    free_conv_layer(L);
-//
-//    L3 = batch_norm_wrapper(L2, 0);
-////    printf("\n%d %d\n", L3->height, L3->n_layers);
-////    printf("\n%lf\n", L3->values[0][0][0]);
-////    printf("\n%lf\n", L3->values[0][0][1]);
-////    printf("\n%lf\n", L3->values[0][0][2]);
-//
-//    L4 = leaky_ReLu(L3);
-//
-////    printf("\n%d %d\n", L4->height, L4->n_layers);
-////    printf("\n%lf\n", L4->values[0][0][0]);
-////    printf("\n%lf\n", L4->values[0][0][1]);
-////    printf("\n%lf\n", L4->values[0][0][2]);
-//
-//    L5 = max_pool(L4, 2, 2);
-//    printf("After pooling: ");
-//
-////    printf("\n%d %d\n", L5->height, L5->n_layers);
-////    printf("\n%lf\n", L5->values[0][0][0]);
-////    printf("\n%lf\n", L5->values[0][0][1]);
-////    printf("\n%lf\n", L5->values[0][0][2]);
-////    print_conv_layer_one_l(L4);
 
 //  1-4
     L1 = conv_block_wrapper_with_pool(L, 0, 2, 2);
@@ -194,22 +233,10 @@ void run_model() {
 //  21-24
     L2 = conv_block_wrapper_with_pool(L1, 5, 2, 1);
 
-//    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
-//    printf("\n%lf", L2->values[0][0][0]);
-//    printf("\n%lf", L2->values[0][0][1]);
-//    printf("\n%lf\n\n", L2->values[0][0][2]);
-
 //  25-27
     L1 = conv_block_wrapper_no_pool(L2, 6);
 //  28-30
     L2 = conv_block_wrapper_no_pool(L1, 7);
-
-//    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
-//    printf("\n%lf\n", L2->values[0][0][0]);
-//    printf("\n%lf\n", L2->values[1][0][0]);
-//    printf("\n%lf\n", L2->values[2][0][0]);
-//
-
     L1 = conv_block_wrapper_no_pool(L2, 8);
 
 
@@ -237,60 +264,112 @@ void run_model() {
 
 
     yolo_box ****boxes = malloc(13 * sizeof(yolo_box ****));
-    for (int i = 0; i < 13; ++i) {
-        boxes[i] = malloc(13 * sizeof(yolo_box ***));
-        for (int j = 0; j < 13; ++j) {
-            boxes[i][j] = malloc(3 * sizeof(yolo_box **));
+    for (int h = 0; h < 13; ++h) {
+        boxes[h] = malloc(13 * sizeof(yolo_box ***));
+        for (int w = 0; w < 13; ++w) {
+            boxes[h][w] = malloc(3 * sizeof(yolo_box **));
         }
     }
 
-    for (int i = 0; i < 13; ++i) {
-        for (int j = 0; j < 13; ++j) {
+    for (int h = 0; h < 13; ++h) {
+        for (int w = 0; w < 13; ++w) {
             for (int k = 0; k < 3; ++k) {
-                double tx = L2->values[0 + k * 85][i][j];
-                double ty = L2->values[1 + k * 85][i][j];
-                double tw = L2->values[2 + k * 85][i][j];
-                double th = L2->values[3 + k * 85][i][j];
-                double prob = L2->values[4 + k * 85][i][j];
-                int cell_x = i;
-                int cell_y = j;
-                int anchor_width = 344;
-                int anchor_height = 318;
+                double tx = L2->values[0 + k * 85][h][w];
+                double ty = L2->values[1 + k * 85][h][w];
+                double tw = L2->values[2 + k * 85][h][w];
+                double th = L2->values[3 + k * 85][h][w];
+                double conf = L2->values[4 + k * 85][h][w];
+                int cell_y = h;
+                int cell_x = w;
+                int anchor_width;
+                int anchor_height;
+//                10,14,  23,27,  37,58,  81,82,  135,169,  344,319
+//                switch (k % 3){
+//                    case 0:
+//                        anchor_width = 14;
+//                        anchor_height = 10;
+//                        break;
+//                    case 1:
+//                        anchor_width = 27;
+//                        anchor_height = 23;
+//                        break;
+//                    case 2:
+//                        anchor_width = 58;
+//                        anchor_height = 37;
+//                        break;
+//
+//                    default:break;
+//                }
+//
+//                switch (k % 3){
+//                    case 0:
+//                        anchor_width = 81;
+//                        anchor_height = 82;
+//                        break;
+//                    case 1:
+//                        anchor_width = 135;
+//                        anchor_height = 169;
+//                        break;
+//                    case 2:
+//                        anchor_width = 319;
+//                        anchor_height = 344;
+//                        break;
+//
+//                    default:break;
+//                }
+                switch (k % 3){
+                    case 0:
+                        anchor_width = 82;
+                        anchor_height = 81;
+                        break;
+                    case 1:
+                        anchor_width = 169;
+                        anchor_height = 135;
+                        break;
+                    case 2:
+                        anchor_width = 344;
+                        anchor_height = 319;
+                        break;
+
+                    default:break;
+                }
+
+
                 int image_width = 416;
                 int image_height = 416;
-                boxes[i][j][k] = get_yolo_box(tx, ty, tw, th, prob, cell_x, cell_y, anchor_width, anchor_height,
-                                              image_width, image_height);
+                boxes[h][w][k] = get_yolo_box(tx, ty, tw, th, conf, cell_x, cell_y, anchor_width, anchor_height,
+                                              image_width, image_height, 13);
+//                correct_yolo_box(boxes[h][w][k], image_width, image_height, 13);
             }
         }
     }
 
     softmax(boxes, L2);
+    printf("\n\n");
 
-    for (int i = 0; i < 13; ++i) {
-        for (int j = 0; j < 13; ++j) {
+    for (int h = 0; h < 13; ++h) {
+        for (int w = 0; w < 13; ++w) {
             for (int k = 0; k < 3; ++k) {
-                if(boxes[i][j][k]->confidence > 2 && boxes[i][j][k]->class_probability > 0.8){
-                    double tx = L2->values[0 + k * 85][i][j];
-                    double ty = L2->values[1 + k * 85][i][j];
-                    double tw = L2->values[2 + k * 85][i][j];
-                    double th = L2->values[3 + k * 85][i][j];
-                    printf("%lf\n", boxes[i][j][k]->confidence);
-                    printf("%d\n", boxes[i][j][k]->class);
-                    printf("%d %d %d %lf\n", i, j, k, boxes[i][j][k]->class_probability);
-//                    printf("%lf %lf %lf %lf\n", tx,ty,tw,th);
-                    printf("(%.1lf, %.1lf), (%.1lf, %1.lf)\n", boxes[i][j][k]->left_up_x, boxes[i][j][k]->left_up_y, boxes[i][j][k]->right_bottom_x, boxes[i][j][k]->right_bottom_y );
+                if (boxes[h][w][k]->confidence > 3.0 && boxes[h][w][k]->class_probability > 0.7) {
+                    printf("%lf\n", boxes[h][w][k]->confidence);
+                    printf("%d \n", boxes[h][w][k]->class);
+                    printf("%d %d %d %lf\n", h, w, k, boxes[h][w][k]->class_probability);
+                    printf("%.1lf, %.1lf - (%.1lf, %.1lf), (%.1lf, %1.lf)\n",boxes[h][w][k]->x, boxes[h][w][k]->y, boxes[h][w][k]->x_min, boxes[h][w][k]->x_max,
+                           boxes[h][w][k]->y_min, boxes[h][w][k]->y_max);
                     printf("\n");
                 }
 
-//                if (boxes[i][j][k]->confidence > 10.0) {
-//                    printf("%lf\n", boxes[i][j][k]->confidence);
-//                    printf("%d\n", boxes[i][j][k]->class);
-//                    printf("%lf\n", boxes[i][j][k]->class_probability);
+//                if (boxes[h][w][k]->confidence > 10.0) {
+//                    printf("%lf\n", boxes[h][w][k]->confidence);
+//                    printf("%d\n", boxes[h][w][k]->class);
+//                    printf("%lf\n", boxes[h][w][k]->class_probability);
 //                    printf("\n");
 //                }
             }
         }
     }
+
+    draw_boxes(load_resized_image(), boxes);
 
 
 
@@ -307,28 +386,6 @@ void run_model() {
 //        }
 //    }
 
-//
-//    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
-//    printf("\n%lf\n", L2->values[0][0][0]);
-//    printf("\n%lf\n", L2->values[0][0][1]);
-//    printf("\n%lf\n", L2->values[0][0][2]);
-//    printf("\n%lf\n", L2->values[0][0][L2->width-1]);
-//
-
-//    [[32.303703   3.1947038 -8.289908  30.665462  48.937305 ]]
-//    2 [[ -2.4656894 -14.658622  -11.760943   -3.6249452 136.50597  ]]
-
-
-//    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
-//    printf("\n%lf ", L2->values[0][0][0]);
-//    printf("\n%lf ", L2->values[1][0][0]);
-//    printf("\n%lf ", L2->values[2][0][0]);
-//    printf("\n%lf ", L2->values[3][0][0]);
-//    printf("\n%lf ", L2->values[4][0][0]);
-//    printf("\n%lf\n", L2->values[5][0][0]);
-
-
-
 }
 
 
@@ -336,20 +393,6 @@ int main() {
 
 
     run_model();
-
-//    conv_layer *L = test_conv_layer(10, 10, 3);
-//    conv_layer *L2 = max_pool(L, 2, 1);
-//    print_conv_layer(L2);
-//    kernel *K = test_kernel(1, 1024, 256);
-//    conv_layer *L2 = conv3D(L, K, 1, NO_PADDING);
-//
-//    print_conv_layer(L);
-//    print_kernel(K);
-//    print_conv_layer(L2);
-//        conv_layer *L2 = max_pool(L, 2, 2);
-
-//    print_conv_layer(L);
-//    print_conv_layer(L2);
 
 
 

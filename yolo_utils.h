@@ -9,16 +9,18 @@ typedef struct yolo_box {
     double confidence;
     int class;
     double class_probability;
-    double left_up_x;
-    double left_up_y;
-    double right_bottom_x;
-    double right_bottom_y;
+    double x_min;
+    double y_max;
+    double x_max;
+    double y_min;
 } yolo_box;
 
-yolo_box *get_yolo_box(double tx, double ty, double tw, double th, double prob, int cell_x, int cell_y, int anchor_width, int anchor_height, int image_width, int image_height);
+yolo_box *get_yolo_box(double tx, double ty, double tw, double th, double prob, int cell_x, int cell_y, int anchor_width, int anchor_height, int image_width, int image_height, int grid_size);
 
 void print_yolo_box(yolo_box *box);
 
 void scale_boxes(yolo_box ****boxes);
 
 void softmax(yolo_box ****boxes, conv_layer *L);
+
+void correct_yolo_box(yolo_box *box, int image_width, int image_height, int grid_size);
