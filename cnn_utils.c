@@ -376,7 +376,6 @@ double max_from_2D(double **A, int height, int width, int range){
     return max;
 }
 
-
 conv_layer *max_pool(conv_layer * L, int pool_size, int stride){
     conv_layer *L2 = NULL;
     if (stride == 1) {
@@ -497,6 +496,47 @@ conv_layer *leaky_ReLu(conv_layer *L){
         }
     }
     return L2;
+}
+
+conv_layer *upscale(conv_layer *L){
+    conv_layer *L2 = allocate_conv_layer(L->height*2, L->width*2, L->n_layers);
+
+    for (int l = 0; l < L->n_layers; ++l) {
+        for (int h = 0; h < L->height; h ++) {
+            for (int w = 0; w < L->width; w ++) {
+                L2->values[l][2*h][2*w] = L->values[l][h][w];
+                L2->values[l][2*h+1][2*w] = L->values[l][h][w];
+                L2->values[l][2*h][2*w+1] = L->values[l][h][w];
+                L2->values[l][2*h+1][2*w+1] = L->values[l][h][w];
+            }
+        }
+    }
+    return L2;
+}
+
+conv_layer *concatenate(conv_layer *L1, conv_layer *L2){
+    printf("%d %d\n", L1->n_layers, L2->n_layers);
+    printf("%d %d\n", L1->height, L2->height);
+    printf("%d %d\n", L1->width, L2->width);
+    if(L1->height != L2->height || L1->width != L2->width || (L1->n_layers + 1) != L2->n_layers){
+        printf("Concatenation error: Wrong dimensions\n");
+        exit(EXIT_FAILURE);
+    }
+
+    conv_layer *L3 = allocate_conv_layer(L1->height, L1->width, L1->n_layers);
+
+    for (int l = 0; l < L1->n_layers; ++l) {
+        for (int h = 0; h < L1->height; h ++) {
+            for (int w = 0; w < L1->width; w ++) {
+                if (l == 256){
+                    L3->values[l][h][w] = L1->values[l][h][w];
+                } else {
+                    L3->values[l][h][w] = L2->values[l][h][w] + L2->values[l][h][w];
+                }
+            }
+        }
+    }
+    return L3;
 }
 
 double ***load_anchors(conv_layer *L, int start){

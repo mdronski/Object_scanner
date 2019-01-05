@@ -99,83 +99,144 @@ void save_image(conv_layer *L) {
 
 }
 
-void draw_boxes(conv_layer *L, yolo_box ****boxes) {
-    for (int i = 0; i < 13; ++i) {
-        for (int j = 0; j < 13; ++j) {
-            for (int k = 0; k < 3; ++k) {
-                if (boxes[i][j][k]->confidence > 15 &&
-                    boxes[i][j][k]->class_probability > 0.9 &&
-                        (boxes[i][j][k]->class == 1)){
-                    printf("xd\n");
-//                    printf("%d %d\n", (int) boxes[i][j][k]->y_min, (int) boxes[i][j][k]->y_max);
-//                    printf("%d %d\n", (int) boxes[i][j][k]->x_min, (int) boxes[i][j][k]->x_max);
-                        int x = (int) boxes[i][j][k] -> x;
-                        int y = (int) boxes[i][j][k] -> y;
-//
-                    L->values[0][y][x] = 255;
-                    L->values[0][y][x+1] = 255;
-                    L->values[0][y+1][x] = 255;
-                    L->values[0][y+1][x+1] = 255;
+void draw_boxes(conv_layer *L, yolo_box_node *list) {
+    yolo_box_node *ptr = list;
+    while (ptr->next != NULL){
+        if (ptr->box->confidence > 10 &&
+            ptr->box->class_probability > 0.9 &&
+            (ptr->box->class == 1)){
+            printf("%.1lf (%d %d)  ",ptr->box->confidence, (int) ptr->box->x_min, (int) ptr->box->x_max);
+            printf("(%d %d) \n", (int) ptr->box->y_min, (int) ptr->box->y_max);
+            int x = (int) ptr->box -> x;
+            int y = (int) ptr->box -> y;
+
+            L->values[0][y][x] = 255;
+            L->values[0][y][x+1] = 255;
+            L->values[0][y+1][x] = 255;
+            L->values[0][y+1][x+1] = 255;
 
 
-                    L->values[1][y][x] = 255;
-                    L->values[1][y][x+1] = 255;
-                    L->values[1][y+1][x] = 255;
-                    L->values[1][y+1][x+1] = 255;
+            L->values[1][y][x] = 255;
+            L->values[1][y][x+1] = 255;
+            L->values[1][y+1][x] = 255;
+            L->values[1][y+1][x+1] = 255;
 
 
-                    L->values[2][y][x] = 255;
-                    L->values[2][y][x+1] = 255;
-                    L->values[2][y+1][x] = 255;
-                    L->values[2][y+1][x+1] = 255;
+            L->values[2][y][x] = 255;
+            L->values[2][y][x+1] = 255;
+            L->values[2][y+1][x] = 255;
+            L->values[2][y+1][x+1] = 255;
 
-//
-//                    L->values[0][x][y] = 255;
-//                    L->values[0][x][y+1] = 255;
-//                    L->values[0][x+1][y] = 255;
-//                    L->values[0][x+1][y+1] = 255;
-//
-//                    L->values[1][x][y] = 255;
-//                    L->values[1][x][y+1] = 255;
-//                    L->values[1][x+1][y] = 255;
-//                    L->values[1][x+1][y+1] = 255;
-//
-//                    L->values[2][x][y] = 255;
-//                    L->values[2][x][y+1] = 255;
-//                    L->values[2][x+1][y] = 255;
-//                    L->values[2][x+1][y+1] = 255;
 
-                    for (int h = (int) boxes[i][j][k]->y_min; h < boxes[i][j][k]->y_max; ++h) {
-                        int ws = (int) boxes[i][j][k]->x_min + 1;
-                        int wk = (int) boxes[i][j][k]->x_max - 1;
-                        L->values[0][h][ws] = 255;
-                        L->values[1][h][ws] = 255;
-                        L->values[2][h][ws] = 255;
+            for (int h = (int) ptr->box->y_min; h < ptr->box->y_max; ++h) {
+                int ws = (int) ptr->box->x_min + 1;
+                int wk = (int) ptr->box->x_max - 1;
+                L->values[0][h][ws] = 255;
+                L->values[1][h][ws] = 255;
+                L->values[2][h][ws] = 255;
 
-                        L->values[0][h][wk] = 255;
-                        L->values[1][h][wk] = 255;
-                        L->values[2][h][wk] = 255;
-                    }
+                L->values[0][h][wk] = 255;
+                L->values[1][h][wk] = 255;
+                L->values[2][h][wk] = 255;
+            }
 
-                    for (int w = (int) boxes[i][j][k]->x_min; w < boxes[i][j][k]->x_max; ++w) {
-                        int hs = (int) boxes[i][j][k]->y_min + 1;
-                        int hk = (int) boxes[i][j][k]->y_max - 1;
+            for (int w = (int) ptr->box->x_min; w < ptr->box->x_max; ++w) {
+                int hs = (int) ptr->box->y_min + 1;
+                int hk = (int) ptr->box->y_max - 1;
 
-                        L->values[0][hs][w] = 255;
-                        L->values[1][hs][w] = 255;
-                        L->values[2][hs][w] = 255;
+                L->values[0][hs][w] = 255;
+                L->values[1][hs][w] = 255;
+                L->values[2][hs][w] = 255;
 
-                        L->values[0][hk][w] = 255;
-                        L->values[1][hk][w] = 255;
-                        L->values[2][hk][w] = 255;
-                    }
-                }
+                L->values[0][hk][w] = 255;
+                L->values[1][hk][w] = 255;
+                L->values[2][hk][w] = 255;
             }
         }
+
+
+        ptr = ptr->next;
     }
     save_image(L);
+
 }
 
+//void draw_boxes(conv_layer *L, yolo_box ****boxes) {
+//    for (int i = 0; i < 13; ++i) {
+//        for (int j = 0; j < 13; ++j) {
+//            for (int k = 0; k < 3; ++k) {
+//                if (boxes[i][j][k]->confidence > 15 &&
+//                    boxes[i][j][k]->class_probability > 0.9 &&
+//                        (boxes[i][j][k]->class == 1)){
+////                    printf("xd\n");
+//                    printf("(%d %d)  ", (int) boxes[i][j][k]->x_min, (int) boxes[i][j][k]->x_max);
+//                    printf("(%d %d) \n", (int) boxes[i][j][k]->y_min, (int) boxes[i][j][k]->y_max);
+//                        int x = (int) boxes[i][j][k] -> x;
+//                        int y = (int) boxes[i][j][k] -> y;
+////
+//                    L->values[0][y][x] = 255;
+//                    L->values[0][y][x+1] = 255;
+//                    L->values[0][y+1][x] = 255;
+//                    L->values[0][y+1][x+1] = 255;
+//
+//
+//                    L->values[1][y][x] = 255;
+//                    L->values[1][y][x+1] = 255;
+//                    L->values[1][y+1][x] = 255;
+//                    L->values[1][y+1][x+1] = 255;
+//
+//
+//                    L->values[2][y][x] = 255;
+//                    L->values[2][y][x+1] = 255;
+//                    L->values[2][y+1][x] = 255;
+//                    L->values[2][y+1][x+1] = 255;
+//
+////
+////                    L->values[0][x][y] = 255;
+////                    L->values[0][x][y+1] = 255;
+////                    L->values[0][x+1][y] = 255;
+////                    L->values[0][x+1][y+1] = 255;
+////
+////                    L->values[1][x][y] = 255;
+////                    L->values[1][x][y+1] = 255;
+////                    L->values[1][x+1][y] = 255;
+////                    L->values[1][x+1][y+1] = 255;
+////
+////                    L->values[2][x][y] = 255;
+////                    L->values[2][x][y+1] = 255;
+////                    L->values[2][x+1][y] = 255;
+////                    L->values[2][x+1][y+1] = 255;
+//
+//                    for (int h = (int) boxes[i][j][k]->y_min; h < boxes[i][j][k]->y_max; ++h) {
+//                        int ws = (int) boxes[i][j][k]->x_min + 1;
+//                        int wk = (int) boxes[i][j][k]->x_max - 1;
+//                        L->values[0][h][ws] = 255;
+//                        L->values[1][h][ws] = 255;
+//                        L->values[2][h][ws] = 255;
+//
+//                        L->values[0][h][wk] = 255;
+//                        L->values[1][h][wk] = 255;
+//                        L->values[2][h][wk] = 255;
+//                    }
+//
+//                    for (int w = (int) boxes[i][j][k]->x_min; w < boxes[i][j][k]->x_max; ++w) {
+//                        int hs = (int) boxes[i][j][k]->y_min + 1;
+//                        int hk = (int) boxes[i][j][k]->y_max - 1;
+//
+//                        L->values[0][hs][w] = 255;
+//                        L->values[1][hs][w] = 255;
+//                        L->values[2][hs][w] = 255;
+//
+//                        L->values[0][hk][w] = 255;
+//                        L->values[1][hk][w] = 255;
+//                        L->values[2][hk][w] = 255;
+//                    }
+//                }
+//            }
+//        }
+//    }
+//    save_image(L);
+//}
 
 conv_layer *batch_norm_wrapper(conv_layer *L, int n) {
     return batch_normalization(L, load_batch_normalization_means(n), load_batch_normalization_variances(n),
@@ -216,6 +277,7 @@ void run_model() {
     conv_layer *L;
     conv_layer *L1;
     conv_layer *L2;
+    conv_layer *L3;
     L = load_resized_image();
 
 //  1-4
@@ -229,14 +291,15 @@ void run_model() {
     L2 = conv_block_wrapper_with_pool(L1, 3, 2, 2);
 
 //  17-20
-    L1 = conv_block_wrapper_with_pool(L2, 4, 2, 2);
+    L3 = conv_block_wrapper_with_pool(L2, 4, 2, 2);
 //  21-24
-    L2 = conv_block_wrapper_with_pool(L1, 5, 2, 1);
+    L2 = conv_block_wrapper_with_pool(L3, 5, 2, 1);
 
 //  25-27
     L1 = conv_block_wrapper_no_pool(L2, 6);
 //  28-30
     L2 = conv_block_wrapper_no_pool(L1, 7);
+//  36, 38, 40
     L1 = conv_block_wrapper_no_pool(L2, 8);
 
 
@@ -245,12 +308,7 @@ void run_model() {
 //    printf("\n%lf\n", L1->values[1][0][0]);
 //    printf("\n%lf\n", L1->values[2][0][0]);
 //
-//    person 0.87 (42, 118) (309, 351)
-//    height = 267 width = 233
-//    center = (175.5, 234.5)
-//    0.15511817799961136
-
-
+//  42
     K = load_kernel_by_number(9);
     print_kernel(K);
     L2 = conv3D_paralel(L1, K, 1, ZERO_PADDING);
@@ -300,7 +358,7 @@ void run_model() {
 //
 //                    default:break;
 //                }
-//
+
 //                switch (k % 3){
 //                    case 0:
 //                        anchor_width = 81;
@@ -334,7 +392,6 @@ void run_model() {
                     default:break;
                 }
 
-
                 int image_width = 416;
                 int image_height = 416;
                 boxes[h][w][k] = get_yolo_box(tx, ty, tw, th, conf, cell_x, cell_y, anchor_width, anchor_height,
@@ -346,45 +403,68 @@ void run_model() {
 
     softmax(boxes, L2);
     printf("\n\n");
-
-    for (int h = 0; h < 13; ++h) {
-        for (int w = 0; w < 13; ++w) {
-            for (int k = 0; k < 3; ++k) {
-                if (boxes[h][w][k]->confidence > 3.0 && boxes[h][w][k]->class_probability > 0.7) {
-                    printf("%lf\n", boxes[h][w][k]->confidence);
-                    printf("%d \n", boxes[h][w][k]->class);
-                    printf("%d %d %d %lf\n", h, w, k, boxes[h][w][k]->class_probability);
-                    printf("%.1lf, %.1lf - (%.1lf, %.1lf), (%.1lf, %1.lf)\n",boxes[h][w][k]->x, boxes[h][w][k]->y, boxes[h][w][k]->x_min, boxes[h][w][k]->x_max,
-                           boxes[h][w][k]->y_min, boxes[h][w][k]->y_max);
-                    printf("\n");
-                }
-
-//                if (boxes[h][w][k]->confidence > 10.0) {
+//
+//    for (int h = 0; h < 13; ++h) {
+//        for (int w = 0; w < 13; ++w) {
+//            for (int k = 0; k < 3; ++k) {
+//                if (boxes[h][w][k]->confidence > 3.0 && boxes[h][w][k]->class_probability > 0.7 && boxes[h][w][k]->class == 1) {
 //                    printf("%lf\n", boxes[h][w][k]->confidence);
-//                    printf("%d\n", boxes[h][w][k]->class);
-//                    printf("%lf\n", boxes[h][w][k]->class_probability);
+//                    printf("%d \n", boxes[h][w][k]->class);
+//                    printf("%d %d %d %lf\n", h, w, k, boxes[h][w][k]->class_probability);
+//                    printf("%.1lf, %.1lf - (%.1lf, %.1lf), (%.1lf, %1.lf)\n",boxes[h][w][k]->x, boxes[h][w][k]->y, boxes[h][w][k]->x_min, boxes[h][w][k]->x_max,
+//                           boxes[h][w][k]->y_min, boxes[h][w][k]->y_max);
 //                    printf("\n");
 //                }
-            }
-        }
-    }
-
-    draw_boxes(load_resized_image(), boxes);
-
-
-
-//    for (int i = 0; i < 13; ++i) {
-//        for (int j = 0; j < 13; ++j) {
-//            for (int k = 0; k < 3; ++k) {
-//                if (boxes[i][j][k]->confidence > 10.0){
-//                    print_yolo_box(boxes[i][j][k]);
-//                }
-////                if (i==7 && j==5 && k==2){
-////                    printf("%lf, %lf, %lf, %lf, %d, %d\n", tx, ty, tw, th, cell_x, cell_y);
+//
+////                if (boxes[h][w][k]->confidence > 10.0) {
+////                    printf("%lf\n", boxes[h][w][k]->confidence);
+////                    printf("%d\n", boxes[h][w][k]->class);
+////                    printf("%lf\n", boxes[h][w][k]->class_probability);
+////                    printf("\n");
 ////                }
 //            }
 //        }
 //    }
+
+    yolo_box_node *l = non_max_supression(boxes, 0.5, 1);
+
+//TO DO
+
+//    yolo_box_node *ptr = l;
+//    int cnt = 0;
+//    while (ptr->next != NULL){
+//        printf("%lf (%.1lf %.1lf) (%.1lf %1.lf)\n", ptr->box->confidence, ptr->box->x_min, ptr->box->x_max, ptr->box->y_min, ptr->box->y_max);
+//        ptr = ptr -> next;
+//    }
+//    printf("\n");
+//    printf("%lf\n", iou(l->next->box, l->next->next->box));
+//    printf("\n");
+//    printf("\n");
+//    printf("%lf\n", iou(l->box, l->next->box));
+//    printf("\n");
+//    printf("%lf\n", iou(l->box, l->next->next->box));
+//    printf("\n");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    draw_boxes(load_resized_image(), l);
+
 
 }
 
@@ -393,7 +473,9 @@ int main() {
 
 
     run_model();
-
+//    conv_layer *L = test_conv_layer(3, 3, 3);
+//    conv_layer *L2 = upscale(L);
+//    print_conv_layer_one_l(L2);
 
 
 

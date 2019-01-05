@@ -82,3 +82,6 @@ conv_layer *add_bias(conv_layer *L, double* bias);
 
 double ***load_anchors(conv_layer *L, int start);
 
+conv_layer *upscale(conv_layer *L);
+
+conv_layer *concatenate(conv_layer *L1, conv_layer *L2);
