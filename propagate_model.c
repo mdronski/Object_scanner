@@ -101,31 +101,31 @@ void save_image(conv_layer *L) {
 
 void draw_boxes(conv_layer *L, yolo_box_node *list) {
     yolo_box_node *ptr = list;
-    while (ptr->next != NULL){
+    while (ptr->next != NULL) {
         if (ptr->box->confidence > 10 &&
             ptr->box->class_probability > 0.9 &&
-            (ptr->box->class == 1)){
-            printf("%.1lf (%d %d)  ",ptr->box->confidence, (int) ptr->box->x_min, (int) ptr->box->x_max);
+            (ptr->box->class == 1)) {
+            printf("%.1lf (%d %d)  ", ptr->box->confidence, (int) ptr->box->x_min, (int) ptr->box->x_max);
             printf("(%d %d) \n", (int) ptr->box->y_min, (int) ptr->box->y_max);
-            int x = (int) ptr->box -> x;
-            int y = (int) ptr->box -> y;
+            int x = (int) ptr->box->x;
+            int y = (int) ptr->box->y;
 
             L->values[0][y][x] = 255;
-            L->values[0][y][x+1] = 255;
-            L->values[0][y+1][x] = 255;
-            L->values[0][y+1][x+1] = 255;
+            L->values[0][y][x + 1] = 255;
+            L->values[0][y + 1][x] = 255;
+            L->values[0][y + 1][x + 1] = 255;
 
 
             L->values[1][y][x] = 255;
-            L->values[1][y][x+1] = 255;
-            L->values[1][y+1][x] = 255;
-            L->values[1][y+1][x+1] = 255;
+            L->values[1][y][x + 1] = 255;
+            L->values[1][y + 1][x] = 255;
+            L->values[1][y + 1][x + 1] = 255;
 
 
             L->values[2][y][x] = 255;
-            L->values[2][y][x+1] = 255;
-            L->values[2][y+1][x] = 255;
-            L->values[2][y+1][x+1] = 255;
+            L->values[2][y][x + 1] = 255;
+            L->values[2][y + 1][x] = 255;
+            L->values[2][y + 1][x + 1] = 255;
 
 
             for (int h = (int) ptr->box->y_min; h < ptr->box->y_max; ++h) {
@@ -244,6 +244,7 @@ conv_layer *batch_norm_wrapper(conv_layer *L, int n) {
 }
 
 conv_layer *conv_block_wrapper_with_pool(conv_layer *L, int n, int pool_size, int pool_stride) {
+
     printf("Block nr %d\n", n);
     kernel *K = load_kernel_by_number(n);
     print_kernel(K);
@@ -256,6 +257,7 @@ conv_layer *conv_block_wrapper_with_pool(conv_layer *L, int n, int pool_size, in
     print_conv_layer(L5);
     printf("\n");
     return L5;
+
 }
 
 conv_layer *conv_block_wrapper_no_pool(conv_layer *L, int n) {
@@ -278,29 +280,36 @@ void run_model() {
     conv_layer *L1;
     conv_layer *L2;
     conv_layer *L3;
+    conv_layer *L4;
+    conv_layer *L5;
     L = load_resized_image();
 
 //  1-4
     L1 = conv_block_wrapper_with_pool(L, 0, 2, 2);
+
 //  5-8
     L2 = conv_block_wrapper_with_pool(L1, 1, 2, 2);
 
 //  9-12
     L1 = conv_block_wrapper_with_pool(L2, 2, 2, 2);
+
 //  13-16
     L2 = conv_block_wrapper_with_pool(L1, 3, 2, 2);
 
 //  17-20
-    L3 = conv_block_wrapper_with_pool(L2, 4, 2, 2);
+    L5 = conv_block_wrapper_with_pool(L2, 4, 2, 2);
+
 //  21-24
-    L2 = conv_block_wrapper_with_pool(L3, 5, 2, 1);
+    L2 = conv_block_wrapper_with_pool(L5, 5, 2, 1);
 
 //  25-27
     L1 = conv_block_wrapper_no_pool(L2, 6);
+
+
 //  28-30
-    L2 = conv_block_wrapper_no_pool(L1, 7);
+    L4 = conv_block_wrapper_no_pool(L1, 7);
 //  36, 38, 40
-    L1 = conv_block_wrapper_no_pool(L2, 8);
+    L1 = conv_block_wrapper_no_pool(L4, 8);
 
 
 //    printf("\n%dx%d %d\n", L1->height, L1->width, L1->n_layers);
@@ -308,6 +317,11 @@ void run_model() {
 //    printf("\n%lf\n", L1->values[1][0][0]);
 //    printf("\n%lf\n", L1->values[2][0][0]);
 //
+//    printf("\n%dx%d %d\n", L4->height, L4->width, L4->n_layers);
+//    printf("\n%lf\n", L4->values[0][0][0]);
+//    printf("\n%lf\n", L4->values[1][0][0]);
+//    printf("\n%lf\n", L4->values[2][0][0]);
+
 //  42
     K = load_kernel_by_number(9);
     print_kernel(K);
@@ -375,7 +389,7 @@ void run_model() {
 //
 //                    default:break;
 //                }
-                switch (k % 3){
+                switch (k % 3) {
                     case 0:
                         anchor_width = 82;
                         anchor_height = 81;
@@ -389,7 +403,8 @@ void run_model() {
                         anchor_height = 319;
                         break;
 
-                    default:break;
+                    default:
+                        break;
                 }
 
                 int image_width = 416;
@@ -427,6 +442,28 @@ void run_model() {
 //    }
 
     yolo_box_node *l = non_max_supression(boxes, 0.5, 1);
+
+//  31
+    printf("Convolution %d\n", 10);
+    K = load_kernel_by_number(10);
+    print_kernel(K);
+    L2 = conv3D_paralel(L4, K, 1, ZERO_PADDING);
+    print_conv_layer(L2);
+
+    L3 = batch_norm_wrapper(L2, 9);
+
+
+
+    L4 = leaky_ReLu(L3);
+
+    printf("\n%dx%d %d\n", L4->height, L4->width, L4->n_layers);
+    printf("\n%lf\n", L4->values[0][0][0]);
+    printf("\n%lf\n", L4->values[1][0][0]);
+    printf("\n%lf\n", L4->values[2][0][0]);
+    printf("\n%lf\n", L4->values[3][0][0]);
+    printf("\n");
+
+    L1 = upscale(L4);
 
 //TO DO
 
@@ -467,7 +504,6 @@ void run_model() {
 
 
 }
-
 
 int main() {
 
