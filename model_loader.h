@@ -5,19 +5,19 @@
 
 kernel *load_single_kernel(char *data_set, int size, int previous_filters, int current_filters);
 
-double* load_bias(char *data_set);
+float* load_bias(char *data_set);
 
-double **load_biases();
+float **load_biases();
 
 kernel **load_kernels();
 
 kernel *load_kernel_by_number(int number);
 
-double *load_batch_normalization_beta(int n);
+float *load_batch_normalization_beta(int n);
 
-double *load_batch_normalization_gamma(int n);
+float *load_batch_normalization_gamma(int n);
 
-double *load_batch_normalization_means(int n);
+float *load_batch_normalization_means(int n);
 
-double *load_batch_normalization_variances(int n);
+float *load_batch_normalization_variances(int n);
 

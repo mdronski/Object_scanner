@@ -100,9 +100,9 @@ char *batch_normalization_variances[11] = {
 };
 
 
-double *load_batch_normalization_means(int n){
+float *load_batch_normalization_means(int n){
 
-    double *means = malloc(kernel_sizes[n][3] * sizeof(double));
+    float *means = malloc(kernel_sizes[n][3] * sizeof(float) * 124);
 
     hid_t file_id, dataset_id;  /* identifiers */
     herr_t status;
@@ -111,7 +111,7 @@ double *load_batch_normalization_means(int n){
     /* Open an existing dataset. */
     dataset_id = H5Dopen2(file_id, batch_normalization_means[n], H5P_DEFAULT);
 
-    status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+    status = H5Dread(dataset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
                      means);
 
 
@@ -130,9 +130,10 @@ double *load_batch_normalization_means(int n){
 }
 
 
-double *load_batch_normalization_variances(int n){
+float *load_batch_normalization_variances(int n){
 
-    double *variances = malloc(kernel_sizes[n][3] * sizeof(double));
+
+    float *variances = malloc(kernel_sizes[n][3] * sizeof(float) * 124);
 
     hid_t file_id, dataset_id;  /* identifiers */
     herr_t status;
@@ -141,7 +142,7 @@ double *load_batch_normalization_variances(int n){
     /* Open an existing dataset. */
     dataset_id = H5Dopen2(file_id, batch_normalization_variances[n], H5P_DEFAULT);
 
-    status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+    status = H5Dread(dataset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
                      variances);
 
 
@@ -161,25 +162,28 @@ double *load_batch_normalization_variances(int n){
 
 
 
-double *load_batch_normalization_beta(int n){
+float *load_batch_normalization_beta(int n){
 
-    double *beta = malloc(kernel_sizes[n][3] * sizeof(double));
+    float *beta = malloc(kernel_sizes[n][3] * sizeof(float) * 124);
 
     hid_t file_id, dataset_id;  /* identifiers */
     herr_t status;
     /* Open an existing file. */
-    file_id = H5Fopen(FILE_NAME, H5F_ACC_RDWR, H5P_DEFAULT);
+    file_id = H5Fopen(FILE_NAME, H5F_ACC_RDONLY, H5P_DEFAULT);
     /* Open an existing dataset. */
     dataset_id = H5Dopen2(file_id, batch_normalization_betas[n], H5P_DEFAULT);
 
-    status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+    status = H5Dread(dataset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
                      beta);
+
 
 
     /* Close the dataset. */
     status = H5Dclose(dataset_id);
+
     /* Close the file. */
     status = H5Fclose(file_id);
+
 
 //    printf("Betas =\n");
 //    for (int i = 0; i < kernel_sizes[n][3]; ++i) {
@@ -191,9 +195,9 @@ double *load_batch_normalization_beta(int n){
 }
 
 
-double *load_batch_normalization_gamma(int n){
+float *load_batch_normalization_gamma(int n){
 
-    double *gamma = malloc(kernel_sizes[n][3] * sizeof(double));
+    float *gamma = malloc(kernel_sizes[n][3] * sizeof(float) * 124);
 
     hid_t file_id, dataset_id;  /* identifiers */
     herr_t status;
@@ -202,7 +206,7 @@ double *load_batch_normalization_gamma(int n){
     /* Open an existing dataset. */
     dataset_id = H5Dopen2(file_id, batch_normalization_gammas[n], H5P_DEFAULT);
 
-    status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+    status = H5Dread(dataset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
                      gamma);
 
     /* Close the dataset. */
@@ -222,7 +226,7 @@ double *load_batch_normalization_gamma(int n){
 
 kernel *load_single_kernel(char *data_set, int size, int n_layers, int n_filters) {
 
-    double *array = malloc(size*size*n_layers*n_filters* sizeof(double));
+    float *array = malloc(size*size*n_layers*n_filters* sizeof(float));
 
     hid_t file_id, dataset_id;  /* identifiers */
     herr_t status;
@@ -232,7 +236,7 @@ kernel *load_single_kernel(char *data_set, int size, int n_layers, int n_filters
     /* Open an existing dataset. */
     dataset_id = H5Dopen2(file_id, data_set, H5P_DEFAULT);
 
-    status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+    status = H5Dread(dataset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
                      array);
 
     for (int h = 0; h < size; ++h) {
@@ -261,8 +265,8 @@ kernel *load_single_kernel(char *data_set, int size, int n_layers, int n_filters
 
 
 
-double* load_bias(int n) {
-    double *bias = malloc(255 * sizeof(double));
+float* load_bias(int n) {
+    float *bias = malloc(255 * sizeof(float));
 
     hid_t file_id, dataset_id;  /* identifiers */
     herr_t status;
@@ -273,7 +277,7 @@ double* load_bias(int n) {
     /* Open an existing dataset. */
     dataset_id = H5Dopen2(file_id, bias_data_sets[n], H5P_DEFAULT);
 
-    status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+    status = H5Dread(dataset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
                      bias);
 
 
@@ -286,8 +290,8 @@ double* load_bias(int n) {
     return bias;
 }
 
-double **load_biases(){
-    double **biases = malloc(2 * sizeof(double*));
+float **load_biases(){
+    float **biases = malloc(2 * sizeof(float*));
 
     biases[0] = load_bias(0);
     biases[1] = load_bias(1);

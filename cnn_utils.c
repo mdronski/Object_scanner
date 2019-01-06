@@ -75,7 +75,7 @@ void print_conv_layer( conv_layer *L) {
 //    }
 }
 
-void print3D(double ***X, int depth, int height, int width) {
+void print3D(float ***X, int depth, int height, int width) {
     for (int d = 0; d < depth; ++d) {
         for (int h = 0; h < height; ++h) {
             for (int w = 0; w < width; ++w) {
@@ -94,42 +94,17 @@ conv_layer *allocate_conv_layer(int height, int width, int n_layers) {
     L->width=width;
     L->n_layers = n_layers;
 
-    double ***array = (double ***) malloc(n_layers * sizeof(double **));
+    float ***array = (float ***) malloc(n_layers * sizeof(float **));
 
     for (int l = 0; l < n_layers; ++l) {
-        array[l] = (double **) malloc(height * sizeof(double *));
+        array[l] = (float **) malloc(height * sizeof(float *));
         for (int h = 0; h < height; ++h) {
-            array[l][h] = (double *) malloc(width * sizeof(double));
+            array[l][h] = (float *) malloc(width * sizeof(float));
         }
     }
     L->values = array;
     return L;
 }
-
-kernel *allocate_kernel(int size, int n_layers, int n_filters) {
-    kernel *K = malloc(sizeof(kernel));
-    K->size = size;
-    K->n_layers = n_layers;
-    K->n_filters = n_filters;
-
-    double ****array = (double ****) malloc(n_filters * sizeof(double ***));
-
-    for (int f = 0; f < n_filters; ++f) {
-        array[f] = (double ***) malloc(n_layers * sizeof(double **));
-        for (int l = 0; l < n_layers; ++l) {
-            array[f][l] = (double **) malloc(size * sizeof(double *));
-            for (int h = 0; h < size; ++h) {
-//                printf("%d %d %d \n",f,l,h);
-                array[f][l][h] = (double *) malloc(size * sizeof(double));
-
-            }
-        }
-    }
-
-    K->weights = array;
-    return K;
-}
-
 
 void free_conv_layer(conv_layer *L){
 
@@ -139,8 +114,44 @@ void free_conv_layer(conv_layer *L){
         }
         free(L->values[l]);
     }
+    free(L->values);
     free(L);
 }
+
+kernel *allocate_kernel(int size, int n_layers, int n_filters) {
+    kernel *K = malloc(sizeof(kernel));
+    K->size = size;
+    K->n_layers = n_layers;
+    K->n_filters = n_filters;
+
+    float ****array = (float ****) malloc(n_filters * sizeof(float ***));
+
+    for (int f = 0; f < n_filters; ++f) {
+        array[f] = (float ***) malloc(n_layers * sizeof(float **));
+        for (int l = 0; l < n_layers; ++l) {
+            array[f][l] = (float **) malloc(size * sizeof(float *));
+            for (int h = 0; h < size; ++h) {
+//                printf("%d %d %d \n",f,l,h);
+                array[f][l][h] = (float *) malloc(size * sizeof(float));
+
+            }
+        }
+    }
+
+    K->weights = array;
+    return K;
+}
+
+//void free_conv_layer(conv_layer *L){
+//
+//    for (int l = 0; l < L->n_layers; ++l) {
+//        for (int h = 0; h < L->height; ++h) {
+//            free(L->values[l][h]);
+//        }
+//        free(L->values[l]);
+//    }
+//    free(L);
+//}
 
 void free_kernel(kernel *K){
 
@@ -171,8 +182,8 @@ void free_kernel(kernel *K){
 //    }
 //}
 
-double conv_step(double ***L, double ***K, int layers, int filter_size, int h_start, int w_start) {
-    double sum = 0.0;
+float conv_step(float ***L, float ***K, int layers, int filter_size, int h_start, int w_start) {
+    float sum = 0.0;
 
     for (int l = 0; l < layers; ++l) {
         for (int h = h_start; h < h_start + filter_size; ++h) {
@@ -366,8 +377,8 @@ kernel *test_kernel(int size, int n_layers, int n_filters) {
     return test_kernel;
 }
 
-double max_from_2D(double **A, int height, int width, int range){
-    double max = -999.0;
+float max_from_2D(float **A, int height, int width, int range){
+    float max = -999.0;
     for (int h = height; h < height + range; ++h) {
         for (int w = width; w < width + range; ++w) {
             max = A[h][w] > max ? A[h][w] : max;
@@ -412,33 +423,7 @@ conv_layer *max_pool(conv_layer * L, int pool_size, int stride){
     return L2;
 }
 
-conv_layer *batch_normalization(conv_layer *L, double *mean, double *variance, double *gamma, double *beta){
-
-
-//    double mean = 0.0;
-//
-//    for (int l = 0; l < L->n_layers; ++l) {
-//        for (int h = 0; h < L->height; ++h) {
-//            for (int w = 0; w < L->width; ++w) {
-//                mean += L->values[l][h][w];
-//            }
-//        }
-//    }
-//
-//    mean = mean / (L->n_layers * L->height * L->width);
-//
-//    double variance = 0.0;
-//
-//
-//    for (int l = 0; l < L->n_layers; ++l) {
-//        for (int h = 0; h < L->height; ++h) {
-//            for (int w = 0; w < L->width; ++w) {
-//                variance += (L->values[l][h][w] - mean) * (L->values[l][h][w] - mean);
-//            }
-//        }
-//    }
-//
-//    variance = variance / (L->n_layers * L->height * L->width);
+conv_layer *batch_normalization(conv_layer *L, float *mean, float *variance, float *gamma, float *beta){
 
     conv_layer *L2 = allocate_conv_layer(L->height, L->width, L->n_layers);
 
@@ -446,12 +431,15 @@ conv_layer *batch_normalization(conv_layer *L, double *mean, double *variance, d
         for (int h = 0; h < L2->height; ++h) {
             for (int w = 0; w < L2->width; ++w) {
                 L2->values[l][h][w] =
-                        gamma[l] * ((L->values[l][h][w]  - mean[l]) / sqrt(variance[l] + 0.001)) + beta[l];
+                        (float) (gamma[l] * ((L->values[l][h][w] - mean[l]) / sqrt(variance[l] + 0.001)) + beta[l]);
 //                L2->values[l][h][w] = gamma[l] * L->values[l][h][w] + beta[l];
             }
         }
     }
-
+    free(mean);
+    free(variance);
+    free(gamma);
+    free(beta);
     return L2;
 }
 
@@ -472,7 +460,7 @@ conv_layer *add_layers(conv_layer *L1, conv_layer *L2){
     return L3;
 }
 
-conv_layer *add_bias(conv_layer *L, double* bias){
+conv_layer *add_bias(conv_layer *L, float* bias){
     conv_layer *L2 = allocate_conv_layer(L->height, L->width, L->n_layers);
 
     for (int l = 0; l < L->n_layers; ++l) {
@@ -515,23 +503,23 @@ conv_layer *upscale(conv_layer *L){
 }
 
 conv_layer *concatenate(conv_layer *L1, conv_layer *L2){
-    printf("%d %d\n", L1->n_layers, L2->n_layers);
-    printf("%d %d\n", L1->height, L2->height);
-    printf("%d %d\n", L1->width, L2->width);
-    if(L1->height != L2->height || L1->width != L2->width || (L1->n_layers + 1) != L2->n_layers){
+//    printf("%d %d\n", L1->n_layers, L2->n_layers);
+//    printf("%d %d\n", L1->height, L2->height);
+//    printf("%d %d\n", L1->width, L2->width);
+    if(L1->height != L2->height || L1->width != L2->width ){
         printf("Concatenation error: Wrong dimensions\n");
         exit(EXIT_FAILURE);
     }
 
-    conv_layer *L3 = allocate_conv_layer(L1->height, L1->width, L1->n_layers);
+    conv_layer *L3 = allocate_conv_layer(L1->height, L1->width, L1->n_layers+L2->n_layers);
 
-    for (int l = 0; l < L1->n_layers; ++l) {
-        for (int h = 0; h < L1->height; h ++) {
-            for (int w = 0; w < L1->width; w ++) {
-                if (l == 256){
+    for (int l = 0; l < L3->n_layers; ++l) {
+        for (int h = 0; h < L3->height; h ++) {
+            for (int w = 0; w < L3->width; w ++) {
+                if (l < L1->n_layers){
                     L3->values[l][h][w] = L1->values[l][h][w];
                 } else {
-                    L3->values[l][h][w] = L2->values[l][h][w] + L2->values[l][h][w];
+                    L3->values[l][h][w] = L2->values[l-L1->n_layers][h][w];
                 }
             }
         }
@@ -539,14 +527,14 @@ conv_layer *concatenate(conv_layer *L1, conv_layer *L2){
     return L3;
 }
 
-double ***load_anchors(conv_layer *L, int start){
-    double ***anchors = malloc(L->width*L->height * sizeof(double **));
+float ***load_anchors(conv_layer *L, int start){
+    float ***anchors = malloc(L->width*L->height * sizeof(float **));
 
     for (int j = 0; j < L->width*L->height; ++j) {
-        anchors[j] = malloc(3 * sizeof(double *));
+        anchors[j] = malloc(3 * sizeof(float *));
 
         for (int i = 0; i < 3; ++i) {
-            anchors[j][i] = malloc(85 * sizeof(double));
+            anchors[j][i] = malloc(85 * sizeof(float));
         }
     }
 

@@ -2,17 +2,17 @@
 #include "model_loader.h"
 
 typedef struct yolo_box {
-    double x;
-    double y;
-    double height;
-    double width;
-    double confidence;
+    float x;
+    float y;
+    float height;
+    float width;
+    float confidence;
     int class;
-    double class_probability;
-    double x_min;
-    double y_max;
-    double x_max;
-    double y_min;
+    float class_probability;
+    float x_min;
+    float y_max;
+    float x_max;
+    float y_min;
 } yolo_box;
 
 typedef struct yolo_box_node {
@@ -22,14 +22,14 @@ typedef struct yolo_box_node {
 
 
 
-yolo_box *get_yolo_box(double tx, double ty, double tw, double th, double prob, int cell_x, int cell_y, int anchor_width, int anchor_height, int image_width, int image_height, int grid_size);
+yolo_box *get_yolo_box(float tx, float ty, float tw, float th, float conf, int cell_x, int cell_y, int anchor_width, int anchor_height, int image_width, int image_height, int grid_size);
 
 void print_yolo_box(yolo_box *box);
 
 void scale_boxes(yolo_box ****boxes);
 
-void softmax(yolo_box ****boxes, conv_layer *L);
+void softmax(yolo_box ****boxes, conv_layer *L, int grid_size);
 
-yolo_box_node *non_max_supression(yolo_box ****boxes, double iou_threshold, int class);
+yolo_box_node *non_max_supression(yolo_box ****boxes, float iou_threshold, int class, int grid_size);
 
-double iou(yolo_box *box1, yolo_box *box2);
+float iou(yolo_box *box1, yolo_box *box2);

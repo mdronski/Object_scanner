@@ -21,7 +21,7 @@ typedef struct conv_layer {
     int width;
     int n_layers;
 
-    double ***values;
+    float ***values;
 } conv_layer;
 
 typedef struct kernel {
@@ -29,7 +29,7 @@ typedef struct kernel {
     int n_layers;
     int n_filters;
 
-    double ****weights;
+    float ****weights;
 } kernel;
 
 
@@ -39,7 +39,7 @@ void print_conv_layer( conv_layer *L);
 
 void print_conv_layer_one_l( conv_layer *L);
 
-void print3D(double ***X, int depth, int height, int width);
+void print3D(float ***X, int depth, int height, int width);
 
 void print_pred_layer_anchor(conv_layer *L);
 
@@ -53,9 +53,9 @@ void free_conv_layer(conv_layer *L);
 void free_kernel(kernel *K);
 
 
-double max_from_2D(double **A, int height, int width, int range);
+float max_from_2D(float **A, int height, int width, int range);
 
-double conv_step(double ***L, double ***K, int layers, int filter_size, int h_start, int w_start);
+float conv_step(float ***L, float ***K, int layers, int filter_size, int h_start, int w_start);
 
 
 conv_layer *test_conv_layer(int height, int width, int n_layers);
@@ -74,13 +74,13 @@ conv_layer *conv3D( conv_layer *L,  kernel *K, int stride, enum PADDING pad);
 
 conv_layer *max_pool(conv_layer * L, int pool_size, int stride);
 
-conv_layer *batch_normalization(conv_layer *L, double *mean, double *variance, double *gamma, double *beta);
+conv_layer *batch_normalization(conv_layer *L, float *mean, float *variance, float *gamma, float *beta);
 
 conv_layer *add_layers(conv_layer *L1, conv_layer *L2);
 
-conv_layer *add_bias(conv_layer *L, double* bias);
+conv_layer *add_bias(conv_layer *L, float* bias);
 
-double ***load_anchors(conv_layer *L, int start);
+float ***load_anchors(conv_layer *L, int start);
 
 conv_layer *upscale(conv_layer *L);
 
