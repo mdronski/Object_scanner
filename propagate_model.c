@@ -544,7 +544,7 @@ void run_model() {
 //    yolo_box_node *ptr = l;
 //    while (ptr->next != NULL)
 //        ptr = ptr->next;
-//    ptr->next = l2;
+//    ptr->next = l2;fzdcz
 //
 
 
