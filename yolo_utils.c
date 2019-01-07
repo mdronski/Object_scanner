@@ -14,18 +14,18 @@ get_yolo_box(float tx, float ty, float tw, float th, float conf, int cell_x, int
     box->x = (float) ((1 / (1 + exp(-tx)) + (float) cell_x) * ((float) image_width / grid_size));
     box->y = (float) ((1 / (1 + exp(-ty)) + (float) cell_y) * ((float) image_height / grid_size));
 
-//    float dif = box->y - image_height/2;
-//    box->y -= dif*0.5;
-
     float dif = box->y - image_height/2;
-    box->y -= dif*0.75;
+    box->y -= dif*0.5;
+
+//    float dif = box->y - image_height/2;
+//    box->y -= dif*0.75;
 
 
 
-//    box->width = (float) ((anchor_width * exp(tw)) > image_width ? (float) image_width * 0.5 : (anchor_width * exp(tw)) * 0.5);
-//    box->height = (float) ((anchor_height * exp(th)) > image_height ? (float) image_height * 0.5 : (anchor_height * exp(th)) * 0.5);
-    box->width = (anchor_width * exp(tw)) > image_width ? (float) image_width * 0.75 : (anchor_width * exp(tw)) * 0.75;
-    box->height = (anchor_height * exp(th)) > image_height ? (float) image_height * 0.75 : (anchor_height * exp(th)) * 0.75;
+    box->width = (float) ((anchor_width * exp(tw)) > image_width ? (float) image_width * 0.5 : (anchor_width * exp(tw)) * 0.5);
+    box->height = (float) ((anchor_height * exp(th)) > image_height ? (float) image_height * 0.5 : (anchor_height * exp(th)) * 0.5);
+//    box->width = (anchor_width * exp(tw)) > image_width ? (float) image_width * 0.75 : (anchor_width * exp(tw)) * 0.75;
+//    box->height = (anchor_height * exp(th)) > image_height ? (float) image_height * 0.75 : (anchor_height * exp(th)) * 0.75;
 //    box->width = (float) ((anchor_width * exp(tw)) > image_width ? (float) image_width : (anchor_width * exp(tw)));
 //    box->height = (float) ((anchor_height * exp(th)) > image_height ? (float) image_height : (anchor_height * exp(th)));
     box->confidence = conf;
@@ -163,7 +163,16 @@ int list_size(yolo_box_node *list) {
     return cnt;
 }
 
+void merge_lists(yolo_box_node *l1, yolo_box_node *l2){
+    yolo_box_node *ptr = l1;
+    while (ptr->next != NULL)
+        ptr = ptr->next;
+    ptr->next = l2;
+}
+
 yolo_box_node *non_max_supression(yolo_box ****boxes, float iou_threshold, int class, int grid_size) {
+
+
     yolo_box_node *list = initialise_list();
     for (int h = 0; h < grid_size; ++h) {
         for (int w = 0; w < grid_size; ++w) {
