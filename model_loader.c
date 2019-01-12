@@ -161,7 +161,6 @@ float *load_batch_normalization_variances(int n){
 }
 
 
-
 float *load_batch_normalization_beta(int n){
 
     float *beta = malloc(kernel_sizes[n][3] * sizeof(float) * 124);
@@ -262,7 +261,6 @@ kernel *load_single_kernel(char *data_set, int size, int n_layers, int n_filters
 
     return K;
 }
-
 
 
 float* load_bias(int n) {

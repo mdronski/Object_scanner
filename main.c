@@ -106,6 +106,7 @@ void process_image(__uint8_t *image_ptr){
         for (int w = 0; w < width; ++w) {
             for (int l = 0; l < 3; ++l) {
                 L->values[l][h][w] = (double) image_ptr[h*width*3 + 3*w + l];
+//                printf("%lf ", L->values[l][h][w]);
             }
         }
     }
@@ -165,8 +166,8 @@ void process_image(__uint8_t *image_ptr){
     image_buffer[0] = 'P';
     image_buffer[1] = '6';
     image_buffer[2] = '\n';
-    image_buffer[3] = '6';
-    image_buffer[4] = '3';
+    image_buffer[3] = '4';
+    image_buffer[4] = '7';
     image_buffer[5] = '8';
     image_buffer[6] = ' ';
     image_buffer[7] = '6';
@@ -180,6 +181,7 @@ void process_image(__uint8_t *image_ptr){
     int i = 15;
     for (int h = 0; h < height; ++h) {
         for (int w = 0; w < width; ++w) {
+//            printf("%d %d\n", h, w);
             unsigned char c = (unsigned char) ((L3->values[0][h][w] / max) * 255.0);
 
             image_buffer[i++] = c;
@@ -192,9 +194,9 @@ void process_image(__uint8_t *image_ptr){
 
     }
 
-//
+
 //    FILE *out_file = fopen("filtered.ppm", "w");
-//    fprintf(out_file, "P6\n%d %d\n255\n", height, width);
+//    fprintf(out_file, "P6\n%d %d\n255\n", width, height);
 //    for (int h = 0; h < height; ++h) {
 //        for (int w = 0; w < width; ++w) {
 //            unsigned char c = (unsigned char) ((L3->values[0][h][w] / max) * 255.0);
@@ -273,14 +275,19 @@ int main() {
 //        start = clock();
 
         fread(image_ptr, (size_t) img_size, 1, image_stream);
-//        for (int i = 0; i < 64; ++i) {
-//            fprintf(stderr, "%d ", image_ptr[i]);
-//        }
 
-        process_image(image_ptr);
-//        end = clock();
-//        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-//        fprintf(stderr, "\nProcessing time = %lf\n", cpu_time_used);
+
+
+        fwrite(image_ptr, 1, (size_t) img_size, gui_stream);
+        fflush(gui_stream);
+
+        fclose(gui_stream);
+
+        gui_stream = fopen(PYTHON_GUI, "wb");
+
+
+
+//        process_image(image_ptr);
 
     }
 

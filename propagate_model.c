@@ -68,7 +68,7 @@ conv_layer *load_resized_image() {
     for (int h = 0; h < L->height; ++h) {
         for (int w = 0; w < L->width; ++w) {
             for (int l = 0; l < 3; ++l) {
-                L->values[l][h][w] = (float) image[h * width * 3 + 3 * w + l];
+                L->values[l][h][w] = (float) image[h * width * 3 + 3 * w + l] / 255;
             }
         }
     }
@@ -87,7 +87,7 @@ void save_image(conv_layer *L) {
     for (int h = 0; h < L->height; ++h) {
         for (int w = 0; w < L->width; ++w) {
             for (int l = 0; l < 3; ++l) {
-                __uint8_t c = (__uint8_t) L->values[l][h][w];
+                unsigned char c = (unsigned char) (L->values[l][h][w] * 255);
                 if (h == 0 && w == 0) {
 //                    printf("%d %lf\n", c, L->values[l][h][w]);
                 }
@@ -95,15 +95,18 @@ void save_image(conv_layer *L) {
             }
         }
     }
+    fprintf(stderr, "saved results\n");
 
 
 }
 
 void draw_boxes(conv_layer *L, yolo_box_node *list) {
     yolo_box_node *ptr = list;
-    while (ptr->box != NULL) {
-        if (ptr->box->confidence > 5 &&
-            ptr->box->class_probability > 0.3
+    while (ptr->next != NULL) {
+        fprintf(stderr, "xd\n");
+
+        if (ptr->box->confidence > 2 &&
+            ptr->box->class_probability > 0.6
             ) {
             printf("%.1lf (%d %d)  ", ptr->box->confidence, (int) ptr->box->x_min, (int) ptr->box->x_max);
             printf("(%d %d) \n", (int) ptr->box->y_min, (int) ptr->box->y_max);
@@ -250,9 +253,14 @@ conv_layer *conv_block_wrapper_with_pool(conv_layer *L, int n, int pool_size, in
     print_kernel(K);
     conv_layer *L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
     print_conv_layer(L2);
+//    if(n==5)
+//        print_conv_layer_weights(L2, 8, 10, 8, 10, 16);
     conv_layer *L3 = batch_norm_wrapper(L2, n);
     conv_layer *L4 = leaky_ReLu(L3);
+//    print_conv_layer_weights(L4, 200, 202, 200, 202, 16);
     conv_layer *L5 = max_pool(L4, pool_size, pool_stride);
+//    print_conv_layer_weights(L5, 200, 202, 200, 202, 16);
+
     printf("After pooling: ");
     print_conv_layer(L5);
     printf("\n");
@@ -268,6 +276,8 @@ conv_layer *conv_block_wrapper_no_pool(conv_layer *L, int n) {
     kernel *K = load_kernel_by_number(n);
     print_kernel(K);
     conv_layer *L2 = conv3D_paralel(L, K, 1, ZERO_PADDING);
+//    if(n==8)
+//        print_conv_layer_weights(L2, 9, 10, 9, 10, 16);
     print_conv_layer(L2);
     conv_layer *L3 = batch_norm_wrapper(L2, n);
     conv_layer *L4 = leaky_ReLu(L3);
@@ -287,7 +297,7 @@ void run_model() {
     conv_layer *L5;
     conv_layer *leaky_relu5;
     L = load_resized_image();
-    int class = 18;
+
 
 //  1-4
     L1 = conv_block_wrapper_with_pool(L, 0, 2, 2);
@@ -309,6 +319,7 @@ void run_model() {
     print_kernel(K);
     L1 = conv3D_paralel(L2, K, 1, ZERO_PADDING);
     print_conv_layer(L1);
+//    print_conv_layer_weights(L1, 8, 10, 8, 10, 16);
     L3 = batch_norm_wrapper(L1, 4);
     leaky_relu5 = leaky_ReLu(L3);
     L5 = max_pool(leaky_relu5, 2, 2);
@@ -335,6 +346,11 @@ void run_model() {
     print_kernel(K);
     L2 = conv3D_paralel(L1, K, 1, ZERO_PADDING);
     print_conv_layer(L2);
+
+
+    L1 = add_bias(L2, load_bias(0));
+    L2 = L1;
+//    print_conv_layer_weights(L2, 9, 10, 9, 10, 16);
 
 //
 //    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
@@ -399,7 +415,7 @@ void run_model() {
                 int image_width = 416;
                 int image_height = 416;
                 boxes[h][w][k] = get_yolo_box(tx, ty, tw, th, conf, cell_x, cell_y, anchor_width, anchor_height,
-                                              image_width, image_height, 13);
+                                              image_width, image_height, 13, k);
 //                correct_yolo_box(boxes[h][w][k], image_width, image_height, 13);
             }
         }
@@ -412,7 +428,7 @@ void run_model() {
         for (int w = 0; w < 13; ++w) {
             for (int k = 0; k < 3; ++k) {
                 if (
-                        boxes[h][w][k]->confidence > 5.0
+                        boxes[h][w][k]->confidence > 2.0
 //                        && boxes[h][w][k]->class_probability > 0.5 && boxes[h][w][k]->class == 28
                         ) {
                     printf("%lf\n", boxes[h][w][k]->confidence);
@@ -425,127 +441,126 @@ void run_model() {
             }
         }
     }
+    int class = 1;
+    yolo_box_node *l = non_max_supression(boxes, 0.6, class, 12, 2.0f);
 
+//  31
+    printf("Convolution %d\n", 10);
+    K = load_kernel_by_number(10);
+    print_kernel(K);
+    L2 = conv3D_paralel(L4, K, 1, ZERO_PADDING);
+    print_conv_layer(L2);
 
-    yolo_box_node *l = non_max_supression(boxes, 0.7, class, 13);
+    L3 = batch_norm_wrapper(L2, 9);
+    L4 = leaky_ReLu(L3);
+    L1 = upscale(L4);
 
-////  31
-//    printf("Convolution %d\n", 10);
-//    K = load_kernel_by_number(10);
-//    print_kernel(K);
-//    L2 = conv3D_paralel(L4, K, 1, ZERO_PADDING);
-//    print_conv_layer(L2);
+//  35
+    L2 = concatenate(L1, leaky_relu5);
 //
-//    L3 = batch_norm_wrapper(L2, 9);
-//    L4 = leaky_ReLu(L3);
-//    L1 = upscale(L4);
-//
-////  35
-//    L2 = concatenate(L1, leaky_relu5);
-////
-////    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
-////    printf("\n%lf\n", L2->values[0][0][0]);
-////    printf("\n%lf\n", L2->values[1][0][0]);
-////    printf("\n%lf\n", L2->values[2][0][0]);
-////    printf("\n%lf\n", L2->values[3][0][0]);
-////    printf("\n");
-//
-//    //  37
-//    printf("Convolution %d\n", 11);
-//    K = load_kernel_by_number(11);
-//    print_kernel(K);
-//    L1 = conv3D_paralel(L2, K, 1, ZERO_PADDING);
-//    print_conv_layer(L1);
-//
-////  39
-//    L3 = batch_norm_wrapper(L1, 10);
-//
-//    L4 = leaky_ReLu(L3);
-//
-//
-//    printf("Convolution %d\n", 12);
-//    K = load_kernel_by_number(12);
-//    print_kernel(K);
-//    L1 = conv3D_paralel(L4, K, 1, ZERO_PADDING);
-//    print_conv_layer(L1);
+//    printf("\n%dx%d %d\n", L2->height, L2->width, L2->n_layers);
+//    printf("\n%lf\n", L2->values[0][0][0]);
+//    printf("\n%lf\n", L2->values[1][0][0]);
+//    printf("\n%lf\n", L2->values[2][0][0]);
+//    printf("\n%lf\n", L2->values[3][0][0]);
 //    printf("\n");
-//
-//
-//    yolo_box ****boxes2 = malloc(26 * sizeof(yolo_box ****));
-//    for (int h = 0; h < 26; ++h) {
-//        boxes2[h] = malloc(26 * sizeof(yolo_box ***));
-//        for (int w = 0; w < 26; ++w) {
-//            boxes2[h][w] = malloc(3 * sizeof(yolo_box **));
-//        }
-//    }
-//
-//    for (int h = 0; h < 26; ++h) {
-//        for (int w = 0; w < 26; ++w) {
-//            for (int k = 0; k < 3; ++k) {
-//                float tx = L1->values[0 + k * 85][h][w];
-//                float ty = L1->values[1 + k * 85][h][w];
-//                float tw = L1->values[2 + k * 85][h][w];
-//                float th = L1->values[3 + k * 85][h][w];
-//                float conf = L1->values[4 + k * 85][h][w];
-//                int cell_y = h;
-//                int cell_x = w;
-//                int anchor_width;
-//                int anchor_height;
-////                anchors = 10,14,  23,27,  37,58,  81,82,  135,169,  344,319
-//                switch (k % 3) {
-//                    case 0:
-//                        anchor_width = 10;
-//                        anchor_height = 14;
-//                        break;
-//                    case 1:
-//                        anchor_width = 23;
-//                        anchor_height = 27;
-//                        break;
-//                    case 2:
-//                        anchor_width = 37;
-//                        anchor_height = 58;
-//                        break;
-//
-//                    default:
-//                        break;
-//                }
-//
-//                int image_width = 416;
-//                int image_height = 416;
-//                boxes2[h][w][k] = get_yolo_box(tx, ty, tw, th, conf, cell_x, cell_y, anchor_width, anchor_height,
-//                                              image_width, image_height, 26);
-////                correct_yolo_box(boxes[h][w][k], image_width, image_height, 13);
-//            }
-//        }
-//    }
-//
-//    softmax(boxes2, L1, 26);
-//    printf("\n\n");
-//
-//    for (int h = 0; h < 26; ++h) {
-//        for (int w = 0; w < 26; ++w) {
-//            for (int k = 0; k < 3; ++k) {
-//                if (boxes2[h][w][k]->confidence > 3.0 && boxes2[h][w][k]->class == class) {
-//                    printf("%lf\n", boxes2[h][w][k]->confidence);
-//                    printf("%d \n", boxes2[h][w][k]->class);
-//                    printf("%d %d %d %lf\n", h, w, k, boxes2[h][w][k]->class_probability);
-//                    printf("%.1lf, %.1lf - (%.1lf, %.1lf), (%.1lf, %1.lf)\n",boxes2[h][w][k]->x, boxes2[h][w][k]->y, boxes2[h][w][k]->x_min, boxes2[h][w][k]->x_max,
-//                           boxes2[h][w][k]->y_min, boxes2[h][w][k]->y_max);
-//                    printf("\n");
-//                }
-//            }
-//        }
-//    }
-//
-//
-//
-//    yolo_box_node *l2 = non_max_supression(boxes2, 0.5, class, 26);
-//////
-//    yolo_box_node *ptr = l;
-//    while (ptr->next != NULL)
-//        ptr = ptr->next;
-//    ptr->next = l2;fzdcz
-//
+
+    //  37
+    printf("Convolution %d\n", 11);
+    K = load_kernel_by_number(11);
+    print_kernel(K);
+    L1 = conv3D_paralel(L2, K, 1, ZERO_PADDING);
+    print_conv_layer(L1);
+
+//  39
+    L3 = batch_norm_wrapper(L1, 10);
+
+    L4 = leaky_ReLu(L3);
+
+
+    printf("Convolution %d\n", 12);
+    K = load_kernel_by_number(12);
+    print_kernel(K);
+    L1 = conv3D_paralel(L4, K, 1, ZERO_PADDING);
+    print_conv_layer(L1);
+    printf("\n");
+
+
+    yolo_box ****boxes2 = malloc(26 * sizeof(yolo_box ****));
+    for (int h = 0; h < 26; ++h) {
+        boxes2[h] = malloc(26 * sizeof(yolo_box ***));
+        for (int w = 0; w < 26; ++w) {
+            boxes2[h][w] = malloc(3 * sizeof(yolo_box **));
+        }
+    }
+
+    for (int h = 0; h < 26; ++h) {
+        for (int w = 0; w < 26; ++w) {
+            for (int k = 0; k < 3; ++k) {
+                float tx = L1->values[0 + k * 85][h][w];
+                float ty = L1->values[1 + k * 85][h][w];
+                float tw = L1->values[2 + k * 85][h][w];
+                float th = L1->values[3 + k * 85][h][w];
+                float conf = L1->values[4 + k * 85][h][w];
+                int cell_y = h;
+                int cell_x = w;
+                int anchor_width;
+                int anchor_height;
+//                anchors = 10,14,  23,27,  37,58,  81,82,  135,169,  344,319
+                switch (k % 3) {
+                    case 0:
+                        anchor_width = 10;
+                        anchor_height = 14;
+                        break;
+                    case 1:
+                        anchor_width = 23;
+                        anchor_height = 27;
+                        break;
+                    case 2:
+                        anchor_width = 37;
+                        anchor_height = 58;
+                        break;
+
+                    default:
+                        break;
+                }
+
+                int image_width = 416;
+                int image_height = 416;
+                boxes2[h][w][k] = get_yolo_box(tx, ty, tw, th, conf, cell_x, cell_y, anchor_width, anchor_height,
+                                              image_width, image_height, 26, 2137);
+//                correct_yolo_box(boxes[h][w][k], image_width, image_height, 13);
+            }
+        }
+    }
+
+    softmax(boxes2, L1, 26);
+    printf("\n\n");
+    class = 28;
+
+    for (int h = 0; h < 26; ++h) {
+        for (int w = 0; w < 26; ++w) {
+            for (int k = 0; k < 3; ++k) {
+                if (boxes2[h][w][k]->confidence > 2.0 && boxes2[h][w][k]->class == class) {
+                    printf("%lf\n", boxes2[h][w][k]->confidence);
+                    printf("%d \n", boxes2[h][w][k]->class);
+                    printf("%d %d %d %lf\n", h, w, k, boxes2[h][w][k]->class_probability);
+                    printf("%.1lf, %.1lf - (%.1lf, %.1lf), (%.1lf, %1.lf)\n",boxes2[h][w][k]->x, boxes2[h][w][k]->y, boxes2[h][w][k]->x_min, boxes2[h][w][k]->x_max,
+                           boxes2[h][w][k]->y_min, boxes2[h][w][k]->y_max);
+                    printf("\n");
+                }
+            }
+        }
+    }
+
+
+    yolo_box_node *l2 = non_max_supression(boxes2, 0.5, class, 26, 0.6);
+////
+    yolo_box_node *ptr = l;
+    while (ptr->next != NULL)
+        ptr = ptr->next;
+    ptr->next = l2;
+
 
 
 

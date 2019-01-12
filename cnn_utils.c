@@ -75,6 +75,17 @@ void print_conv_layer( conv_layer *L) {
 //    }
 }
 
+void print_conv_layer_weights(conv_layer *L, int hs, int hk, int ws, int wk, int channels) {
+    for (int h = hs; h < hk; ++h) {
+        for (int w = ws; w < wk; ++w) {
+            for (int c = 0; c < L->n_layers; ++c) {
+//                if (L->values[c][h][w] / 255 > 0.50 && L->values[c][h][w] / 255 <0.51)
+                fprintf(stderr, "%d %d %d %d %.4f\n", L->n_layers, h, w, c, L->values[c][h][w]);
+            }
+        }
+    }
+}
+
 void print3D(float ***X, int depth, int height, int width) {
     for (int d = 0; d < depth; ++d) {
         for (int h = 0; h < height; ++h) {
@@ -430,8 +441,14 @@ conv_layer *batch_normalization(conv_layer *L, float *mean, float *variance, flo
     for (int l = 0; l < L2->n_layers; ++l) {
         for (int h = 0; h < L2->height; ++h) {
             for (int w = 0; w < L2->width; ++w) {
-                L2->values[l][h][w] =
-                        (float) (gamma[l] * ((L->values[l][h][w] - mean[l]) / sqrt(variance[l] + 0.001)) + beta[l]);
+//                if(h == 0 && w == 0)
+//                    fprintf(stderr, "before: %.4f ", L->values[l][h][w]);
+                L2->values[l][h][w] = (L->values[l][h][w] - mean[l]) / sqrtf(variance[l] + .000001f);
+//                if(h == 0 && w == 0)
+//                    fprintf(stderr, "filter %d mean: %.4f variance: %.4f value: %.4f\n", l, mean[l], variance[l],  L2->values[l][h][w]);
+                L2->values[l][h][w] *= gamma[l];
+                L2->values[l][h][w] += beta[l];
+
 //                L2->values[l][h][w] = gamma[l] * L->values[l][h][w] + beta[l];
             }
         }
@@ -470,6 +487,7 @@ conv_layer *add_bias(conv_layer *L, float* bias){
             }
         }
     }
+
     return L2;
 }
 

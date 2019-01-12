@@ -47,9 +47,7 @@ FILE *image_stream;
 
 void v4lconvert_yuyv_to_rgb24(const unsigned char *src, unsigned char *dest,
                               int width, int height) {
-
     int j;
-
     while (--height >= 0) {
         for (j = 0; j < width; j += 2) {
             int u = src[1];
@@ -89,8 +87,8 @@ static int xioctl(int fh, int request, void *arg) {
 
 static void process_image(const void *p, int size) {
     if (out_buf && frame_counter > 50 && frame_counter % 1 == 0) {
-        FILE *out_file = fopen("out.ppm", "w");
-        fprintf(out_file, "P6\n%d %d\n255\n", witdh, height);
+//        FILE *out_file = fopen("out.ppm", "w");
+//        fprintf(out_file, "P6\n%d %d\n255\n", witdh, height);
 
         void *rgb_image = malloc(witdh * height * 3);
         __u8 *rgb_ptr = (__u8 *) rgb_image;
@@ -106,9 +104,9 @@ static void process_image(const void *p, int size) {
 //            fprintf(out_file, "%c", rgb_ptr[i]);
 //        }
 
-        fwrite(rgb_ptr, 1, witdh * height * 3, out_file);
+//        fwrite(rgb_ptr, 1, witdh * height * 3, out_file);
 
-//        fwrite(rgb_ptr, 1, witdh * height * 3, image_stream);
+        fwrite(rgb_ptr, 1, witdh * height * 3, image_stream);
 
         free(rgb_image);
 //        fclose(out_file);
@@ -116,7 +114,7 @@ static void process_image(const void *p, int size) {
     }
 
 //    fflush(stderr);
-//    fprintf(stderr, ".");
+    fprintf(stderr, ".");
 //    fflush(stdout);
 }
 
@@ -383,14 +381,14 @@ static void init_device(void) {
 
 }
 
-static void close_device(void) {
+static void close_device() {
     if (-1 == close(camera_fd))
         errno_exit("close");
 
     camera_fd = -1;
 }
 
-static void open_device(void) {
+static void open_device() {
     struct stat st;
 
     if (-1 == stat(dev_name, &st)) {

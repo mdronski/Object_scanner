@@ -8,18 +8,15 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-
-
-
 class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'PyQt5 image - pythonspot.com'
+        self.title = 'PyQt5 image'
         self.left = 10
         self.top = 10
-        self.width = 638
-        self.height = 478
+        self.width = 640
+        self.height = 480
         self.image_stream = open("python_gui", mode='rb')
         self.setWindowTitle(self.title)
         # self.setGeometry(self.left, self.top, self.width, self.height)

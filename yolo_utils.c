@@ -5,29 +5,30 @@
 #define MAX(X, Y)  ((X) > (Y) ? (X) : (Y))
 #define MIN(X, Y)  ((X) < (Y) ? (X) : (Y))
 
-yolo_box *
-get_yolo_box(float tx, float ty, float tw, float th, float conf, int cell_x, int cell_y, int anchor_width,
-             int anchor_height, int image_width, int image_height, int grid_size) {
+yolo_box *get_yolo_box(float tx, float ty, float tw, float th, float conf, int cell_x, int cell_y, int anchor_width,
+             int anchor_height, int image_width, int image_height, int grid_size, int index) {
 
     yolo_box *box = malloc(sizeof(yolo_box));
 
-    box->x = (float) ((1 / (1 + exp(-tx)) + (float) cell_x) * ((float) image_width / grid_size));
-    box->y = (float) ((1 / (1 + exp(-ty)) + (float) cell_y) * ((float) image_height / grid_size));
+    box->x = ((1 / (1 + expf(-tx)) + (float) cell_x) * ((float) image_width / grid_size));
+    box->y = ((1 / (1 + expf(-ty)) + (float) cell_y) * ((float) image_height / grid_size));
 
-    float dif = box->y - image_height/2;
-    box->y -= dif*0.5;
+//    float dif = box->y - image_height/2;
+//    box->y -= dif*0.5;
 
 //    float dif = box->y - image_height/2;
 //    box->y -= dif*0.75;
 
 
 
-    box->width = (float) ((anchor_width * exp(tw)) > image_width ? (float) image_width * 0.5 : (anchor_width * exp(tw)) * 0.5);
-    box->height = (float) ((anchor_height * exp(th)) > image_height ? (float) image_height * 0.5 : (anchor_height * exp(th)) * 0.5);
+//    box->width = (float) ((anchor_width * exp(tw)) > image_width ? (float) image_width * 0.5 : (anchor_width * exp(tw)) * 0.5);
+//    box->height = (float) ((anchor_height * exp(th)) > image_height ? (float) image_height * 0.5 : (anchor_height * exp(th)) * 0.5);
 //    box->width = (anchor_width * exp(tw)) > image_width ? (float) image_width * 0.75 : (anchor_width * exp(tw)) * 0.75;
 //    box->height = (anchor_height * exp(th)) > image_height ? (float) image_height * 0.75 : (anchor_height * exp(th)) * 0.75;
-//    box->width = (float) ((anchor_width * exp(tw)) > image_width ? (float) image_width : (anchor_width * exp(tw)));
-//    box->height = (float) ((anchor_height * exp(th)) > image_height ? (float) image_height : (anchor_height * exp(th)));
+    box->width = (float) ((anchor_width * expf(tw)) > image_width ? (float) image_width : (anchor_width * expf(tw)));
+    box->height = (float) ((anchor_height * expf(th)) > image_height ? (float) image_height : (anchor_height * expf(th)));
+//    box->width =  (float) (anchor_width * expf(tw)) * ((float) image_width / grid_size);
+//    box->height = (float) (anchor_height * expf(th)) * ((float) image_height / grid_size);
     box->confidence = conf;
 
     box->x_min = (box->x - box->width / 2) < 0 ? 0 : (box->x - box->width / 2);
@@ -36,10 +37,18 @@ get_yolo_box(float tx, float ty, float tw, float th, float conf, int cell_x, int
     box->x_max = (box->x + box->width / 2) > image_width ? image_width : (box->x + box->width / 2);
     box->y_min = (box->y - box->height / 2) < 0 ? 0 : (box->y - box->height / 2);
 
-    float jiter = 0.3;
-    if (box->width < jiter * image_width || box->height < jiter * image_height) {
-        box->confidence = (float) -1.0;
-    }
+//    float jiter = 0.3;
+//    if (box->width < jiter * image_width || box->height < jiter * image_height) {
+//        box->confidence = (float) -1.0;
+//    }
+
+//    if(box->confidence > 3){
+//        printf("Cell y: %d Cell x: %d index: %d conf: %.3f\n", cell_y, cell_x, index, box->confidence);
+//        printf("tx: %.3f ty: %.3f tw: %.3f th: %.3f\n", tx, ty, tw, th);
+//        printf("bx: %.3f by: %.3f bw: %.3f bh: %.3f\n\n", box->x, box->y, box->width, box->height);
+//    }
+
+
 
     return box;
 }
@@ -170,14 +179,14 @@ void merge_lists(yolo_box_node *l1, yolo_box_node *l2){
     ptr->next = l2;
 }
 
-yolo_box_node *non_max_supression(yolo_box ****boxes, float iou_threshold, int class, int grid_size) {
+yolo_box_node *non_max_supression(yolo_box ****boxes, float iou_threshold, int class, int grid_size, float conf_thresh) {
 
 
     yolo_box_node *list = initialise_list();
     for (int h = 0; h < grid_size; ++h) {
         for (int w = 0; w < grid_size; ++w) {
             for (int k = 0; k < 3; ++k) {
-                if (boxes[h][w][k]->class == class) {
+                if (boxes[h][w][k]->class == class && boxes[h][w][k]->confidence > conf_thresh) {
                     add_to_box_list(boxes[h][w][k], list);
                 }
             }
@@ -188,9 +197,11 @@ yolo_box_node *non_max_supression(yolo_box ****boxes, float iou_threshold, int c
     yolo_box_node *ptr = list;
 
     while (node->next != NULL) {
+
         while (ptr->next != NULL) {
+
             if (iou(node->box, ptr->next->box) > iou_threshold) {
-                ptr->next->box->confidence = -1.0;
+                ptr->next->box->confidence = -1.0f;
             }
             ptr = ptr->next;
         }
@@ -198,7 +209,37 @@ yolo_box_node *non_max_supression(yolo_box ****boxes, float iou_threshold, int c
         ptr = node;
     }
 
-    list = list->next;
+//    list = list->next;
 
     return list;
 }
+
+//void print_yolo_layer(conv_layer *L){
+//    for (int i = 0; i < L->height; ++i) {
+//        for (int j = 0; j < L->width; ++j) {
+//            for (int k = 0; k < 3; ++k) {
+//                sum = 0.0;
+//                for (int l = 5; l < 85; ++l) {
+//                    sum += expf(L->values[l + k * 85][i][j]);
+//                }
+//
+//                for (int l = 5; l < 85; ++l) {
+//                    L->values[l + k * 85][i][j] = (expf(L->values[l + k * 85][i][j]) / sum);
+//                }
+//
+//
+//                best_class = k * 85 + 5;
+//                for (int l = 5; l < 85; ++l) {
+//                    if (L->values[l + k * 85][i][j] > L->values[best_class][i][j]) {
+//                        best_class = l + k * 85;
+//
+//                    }
+//                }
+//
+//                boxes[i][j][k]->class = (best_class % 85) - 4;
+//                boxes[i][j][k]->class_probability = L->values[best_class][i][j];
+//
+//            }
+//        }
+//    }
+//}
