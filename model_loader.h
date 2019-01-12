@@ -5,7 +5,7 @@
 
 kernel *load_single_kernel(char *data_set, int size, int previous_filters, int current_filters);
 
-float* load_bias(char *data_set);
+float* load_bias(int data_set_number);
 
 float **load_biases();
 

@@ -30,6 +30,14 @@ void scale_boxes(yolo_box ****boxes);
 
 void softmax(yolo_box ****boxes, conv_layer *L, int grid_size);
 
-yolo_box_node *non_max_supression(yolo_box ****boxes, float iou_threshold, int class, int grid_size, float conf_thresh);
+yolo_box_node *non_max_supression(yolo_box ****boxes, float iou_threshold, int grid_size, float conf_thresh);
+
+void final_non_max_supression(yolo_box_node *original_list, float iou_threshold);
 
 float iou(yolo_box *box1, yolo_box *box2);
+
+int list_size(yolo_box_node *l);
+
+yolo_box_node *merge_lists(yolo_box_node *l1, yolo_box_node *l2);
+
+void print_box_list(yolo_box_node *l);
