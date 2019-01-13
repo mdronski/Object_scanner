@@ -221,7 +221,7 @@ non_max_supression(yolo_box ****boxes, float iou_threshold, int grid_size, float
             node = node->next;
         }
 
-        fprintf(stderr, "%d %d\n", list_size(main_list), list_size(list));
+//        fprintf(stderr, "%d %d\n", list_size(main_list), list_size(list));
         main_list = merge_lists(main_list, list);
     }
 

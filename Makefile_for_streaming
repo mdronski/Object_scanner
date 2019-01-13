@@ -1,0 +1,4 @@
+all: compile
+
+compile:
+	gcc -O3 cnn_utils.c cnn_utils.h model_loader.c model_loader.h propagate_model.c yolo_utils.c yolo_utils.h -lm -lhdf5 -lpthread -o detect
